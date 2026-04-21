@@ -547,6 +547,7 @@ tbody tr:hover td{background:#faf9f7;}
     <button class="tab" onclick="st('rt',2,this)">반품/교환</button>
   </div>
 
+  <!-- 거래 내역 테이블 헤더에 반품/교환 버튼 컬럼 추가 -->
   <div class="tab-pg on" id="rt-0">
     <div class="sec-hd">
       <div class="sec-hd-l"><div class="ttl">소매 거래 내역</div><div class="dsc">오프라인 직판 · 스마트스토어 · 옥션 등 전 채널 통합</div></div>
@@ -585,7 +586,7 @@ tbody tr:hover td{background:#faf9f7;}
         </select>
       </div>
       <div class="tbl-scroll"><table id="tb-ret">
-        <thead><tr><th>거래일</th><th>판매채널</th><th>종류</th><th>바코드/모델</th><th>통합스펙</th><th>옵션</th><th class="r">수량</th><th class="r">판매단가</th><th class="r">매출</th><th>고객명</th><th>송장번호</th><th>상태</th></tr></thead>
+        <thead><tr><th>거래일</th><th>판매채널</th><th>종류</th><th>바코드/모델</th><th>통합스펙</th><th>옵션</th><th class="r">수량</th><th class="r">판매단가</th><th class="r">매출</th><th>고객명</th><th>송장번호</th><th>상태</th><th>작업</th></tr></thead>
         <tbody id="ret-body"></tbody>
       </table></div>
       <div class="tbl-ft"><span class="pg-info" id="ret-count">총 3건</span></div>
@@ -605,10 +606,36 @@ tbody tr:hover td{background:#faf9f7;}
     </div>
   </div>
 
+  <!-- 반품/교환 탭 -->
   <div class="tab-pg" id="rt-2">
-    <div class="panel"><div class="p-ttl">반품 / 교환 이력</div>
-    <table><thead><tr><th>거래일</th><th>채널</th><th>모델명</th><th>반품일</th><th>교환일</th><th>사유</th><th>처리상태</th></tr></thead>
-    <tbody><tr><td colspan="7" style="text-align:center;padding:28px;color:var(--t3);">반품/교환 이력이 없습니다</td></tr></tbody></table>
+    <div class="sec-hd" style="margin-bottom:14px;">
+      <div class="sec-hd-l">
+        <div class="ttl">반품 / 교환 이력</div>
+        <div class="dsc">주문 기준 자동 매칭 → 재고 자동 반영</div>
+      </div>
+      <div class="sec-hd-r">
+        <button class="btn sm dk" onclick="xlsxDownload('returns')">⬇ 엑셀 다운로드</button>
+        <button class="btn pr sm" onclick="openReturnModal()">+ 반품/교환 등록</button>
+      </div>
+    </div>
+    <!-- 통계 -->
+    <div class="sts-row" style="margin-bottom:14px;">
+      <div class="sts-c"><div class="sts-num" style="color:var(--er)" id="ret-return-cnt">0</div><div class="sts-lbl">반품 건수</div></div>
+      <div class="sts-c"><div class="sts-num" style="color:var(--wa)" id="ret-exchange-cnt">0</div><div class="sts-lbl">교환 건수</div></div>
+      <div class="sts-c"><div class="sts-num" id="ret-return-qty">0</div><div class="sts-lbl">반품 수량</div></div>
+      <div class="sts-c"><div class="sts-num" style="color:var(--ac)" id="ret-return-amt">0</div><div class="sts-lbl">반품 금액(원)</div></div>
+    </div>
+    <div class="tbl-box">
+      <div class="tbl-scroll"><table id="tb-returns">
+        <thead><tr>
+          <th>처리일</th><th>유형</th><th>고객명</th><th>상품명</th>
+          <th class="r">수량</th><th>사유</th><th>주문ID</th><th>재고반영</th><th>처리상태</th><th>작업</th>
+        </tr></thead>
+        <tbody id="returns-body">
+          <tr><td colspan="10" style="text-align:center;padding:28px;color:var(--t3);font-size:11px;">등록된 반품/교환 내역이 없습니다</td></tr>
+        </tbody>
+      </table></div>
+      <div class="tbl-ft"><span class="pg-info" id="returns-count">총 0건</span></div>
     </div>
   </div>
 </div>
@@ -1132,6 +1159,71 @@ tbody tr:hover td{background:#faf9f7;}
   </div>
 </div></div></div>
 
+<!-- ══ 반품/교환 등록 모달 ══ -->
+<div class="mo" id="mo-return"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd">
+    <div class="mo-ttl">반품 / 교환 등록</div>
+    <button class="btn sm" onclick="cm('mo-return')">✕</button>
+  </div>
+  <div class="mo-bd">
+    <div style="background:var(--inl);border-radius:var(--rmd);padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--in);">
+      <b>① 구매자 이름</b> 입력 후 검색 → <b>② 주문 선택 (필수)</b> → <b>③ 처리 유형·수량·사유</b> 입력
+    </div>
+    <div class="fgrid">
+      <div class="fg full">
+        <label class="fl">구매자 이름 검색</label>
+        <div style="display:flex;gap:6px;">
+          <input class="fi" id="rtn-cust-search" placeholder="고객명 입력..." style="flex:1;" oninput="searchRetailOrders()">
+          <button class="btn sm" onclick="searchRetailOrders()" style="flex-shrink:0;white-space:nowrap;">🔍 검색</button>
+        </div>
+      </div>
+      <div class="fg full" id="rtn-order-wrap" style="display:none;">
+        <label class="fl" style="color:var(--er);font-weight:600;">주문 선택 ★ 필수</label>
+        <div id="rtn-order-list" style="border:1px solid var(--b2);border-radius:var(--rmd);max-height:160px;overflow-y:auto;background:var(--sf);"></div>
+      </div>
+      <div class="fg full" id="rtn-selected-wrap" style="display:none;">
+        <div style="background:#f0faf5;border:1px solid var(--ac);border-radius:var(--rmd);padding:10px 14px;font-size:12px;">
+          <div style="font-weight:600;margin-bottom:4px;color:var(--ac);">✅ 선택된 주문</div>
+          <div id="rtn-selected-preview" style="color:var(--t2);line-height:1.9;"></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">처리 유형</label>
+        <select class="fsl" id="rtn-type" onchange="toggleExchangeNote()">
+          <option value="반품">반품 (재고 증가)</option>
+          <option value="교환">교환 (재고 복구 후 재출고)</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">처리 수량</label>
+        <input class="fi" type="number" id="rtn-qty" min="1" value="1">
+      </div>
+      <div class="fg">
+        <label class="fl">처리일</label>
+        <input class="fi" type="date" id="rtn-date">
+      </div>
+      <div class="fg">
+        <label class="fl">사유</label>
+        <select class="fsl" id="rtn-reason">
+          <option>단순 변심</option><option>상품 불량</option><option>오배송</option>
+          <option>사이즈/사양 불일치</option><option>배송 파손</option><option>기타</option>
+        </select>
+      </div>
+      <div class="fg full">
+        <label class="fl">비고 (선택)</label>
+        <input class="fi" type="text" id="rtn-note" placeholder="추가 메모">
+      </div>
+    </div>
+    <div id="rtn-exchange-note" style="display:none;margin-top:8px;padding:8px 12px;background:var(--wal);border-radius:var(--rmd);font-size:11px;color:var(--wa);">
+      ⚠️ 교환 처리: 기존 출고 재고 복구 + 신규 출고 → 수불이력 2건 자동 기록
+    </div>
+  </div>
+  <div class="mo-ft">
+    <button class="btn sm" onclick="cm('mo-return')">취소</button>
+    <button class="btn pr sm" id="rtn-submit-btn" onclick="submitReturn()" disabled style="opacity:.5;cursor:not-allowed;">처리 확정</button>
+  </div>
+</div></div></div>
+
 <div id="toast"></div>
 
 <script>
@@ -1222,6 +1314,7 @@ const DB = {
     {date:'2026-04-13',type:'수출 CI',pid:'V0008',pname:'시멜리아',barcode:'SML-OUT-0001',cat:'PT-HD',spec1:'500GB',spec2:'2.5" SATA',qty:30,price:5000,total:150000,ispec:'V0008-260413-PT-HD-500GB-2.5SATA-OUT-0001',status:'명세서발행'},
   ],
   retail_out: [],
+  returns: [],
   intake_hdd: [
     {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'5Q950009P66KA',size:'500GB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'V0006-26.03.20-HDD-500GB-3.5"-SATA-B-라-1-0002',status:'양품입고'},
     {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'WMAYP8164322',size:'500GB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'V0006-26.03.20-HDD-500GB-3.5"-SATA-B-라-1-0003',status:'양품입고'},
@@ -1416,13 +1509,226 @@ function renderRetail() {
       <td style="white-space:nowrap">
         <button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="editRow('retail',${i})">수정</button>
         <button class="btn sm" style="font-size:10px;padding:3px 8px;color:var(--er);border-color:rgba(220,53,69,.3);" onclick="deleteRow('retail',${i})">삭제</button>
+        <button class="btn sm" style="font-size:10px;padding:3px 8px;color:var(--wa);border-color:rgba(192,122,16,.3);" onclick="openReturnFromOrder(${i})">반품</button>
       </td>
     </tr>`).join('');
   const cnt = document.getElementById('ret-count');
   if(cnt) cnt.textContent = `총 ${DB.retail.length}건`;
 }
 
-function renderInventory() {
+// ─── 반품/교환 ───────────────────────────────
+let selectedRetailOrder = null; // 현재 선택된 주문
+
+// 반품/교환 렌더
+function renderReturns() {
+  if(!DB.returns) DB.returns = [];
+  const rows = DB.returns;
+  const tbody = document.getElementById('returns-body');
+  if(!tbody) return;
+
+  if(rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--t3);font-size:11px;">등록된 반품/교환 내역이 없습니다</td></tr>`;
+  } else {
+    tbody.innerHTML = rows.map((r,i) => `
+      <tr>
+        <td style="color:var(--t3)">${r.date}</td>
+        <td><span class="bd ${r.type==='반품'?'r':'w'}">${r.type}</span></td>
+        <td>${escHtml(r.cust||'—')}</td>
+        <td style="font-size:11px">${escHtml(r.model||'—')}</td>
+        <td class="r">${r.qty}</td>
+        <td style="font-size:11px;color:var(--t2)">${escHtml(r.reason||'—')}</td>
+        <td><span class="cd" style="font-size:10px">${r.orderId||'—'}</span></td>
+        <td><span class="bd ${r.stockDone?'g':'w'}">${r.stockDone?'반영완료':'처리중'}</span></td>
+        <td><span class="bd g">완료</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn sm" style="font-size:10px;padding:3px 8px;color:var(--er);border-color:rgba(220,53,69,.3);" onclick="deleteReturn(${i})">삭제</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  // 통계
+  const returnRows = rows.filter(r=>r.type==='반품');
+  const exchangeRows = rows.filter(r=>r.type==='교환');
+  if(document.getElementById('ret-return-cnt')) document.getElementById('ret-return-cnt').textContent = returnRows.length;
+  if(document.getElementById('ret-exchange-cnt')) document.getElementById('ret-exchange-cnt').textContent = exchangeRows.length;
+  if(document.getElementById('ret-return-qty')) document.getElementById('ret-return-qty').textContent = returnRows.reduce((s,r)=>s+(r.qty||0),0);
+  const returnAmt = returnRows.reduce((s,r)=>s+(r.refundAmt||0),0);
+  if(document.getElementById('ret-return-amt')) document.getElementById('ret-return-amt').textContent = returnAmt.toLocaleString();
+  if(document.getElementById('returns-count')) document.getElementById('returns-count').textContent = `총 ${rows.length}건`;
+}
+
+// 반품/교환 모달 열기
+function openReturnModal(presetOrderIdx) {
+  selectedRetailOrder = null;
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('rtn-date').value = today;
+  document.getElementById('rtn-cust-search').value = '';
+  document.getElementById('rtn-qty').value = 1;
+  document.getElementById('rtn-note').value = '';
+  document.getElementById('rtn-order-wrap').style.display = 'none';
+  document.getElementById('rtn-selected-wrap').style.display = 'none';
+  document.getElementById('rtn-exchange-note').style.display = 'none';
+  document.getElementById('rtn-submit-btn').disabled = true;
+  document.getElementById('rtn-submit-btn').style.opacity = '.5';
+  document.getElementById('rtn-submit-btn').style.cursor = 'not-allowed';
+
+  if(presetOrderIdx !== undefined) {
+    const order = DB.retail[presetOrderIdx];
+    if(order) {
+      document.getElementById('rtn-cust-search').value = order.cust||'';
+      searchRetailOrders();
+      setTimeout(()=>selectRetailOrder(presetOrderIdx), 100);
+    }
+  }
+  om('mo-return');
+}
+
+// 거래내역 탭에서 반품 버튼 클릭
+function openReturnFromOrder(idx) {
+  // 반품/교환 탭으로 이동
+  st('rt', 2, document.querySelectorAll('.tab')[2]);
+  setTimeout(()=>openReturnModal(idx), 50);
+}
+
+// 구매자 이름으로 주문 검색
+function searchRetailOrders() {
+  const keyword = (document.getElementById('rtn-cust-search')?.value||'').trim().toLowerCase();
+  const wrap = document.getElementById('rtn-order-wrap');
+  const list = document.getElementById('rtn-order-list');
+  if(!keyword) { wrap.style.display='none'; return; }
+
+  const matches = DB.retail.map((r,i)=>({r,i})).filter(({r})=>
+    (r.cust||'').toLowerCase().includes(keyword) ||
+    (r.model||r.barcode||'').toLowerCase().includes(keyword)
+  );
+
+  wrap.style.display = 'block';
+  if(matches.length === 0) {
+    list.innerHTML = `<div style="padding:14px;text-align:center;color:var(--t3);font-size:11px;">검색 결과가 없습니다</div>`;
+    return;
+  }
+
+  list.innerHTML = matches.map(({r,i}) => `
+    <div onclick="selectRetailOrder(${i})" style="padding:10px 14px;cursor:pointer;border-bottom:0.5px solid var(--b1);transition:background .1s;"
+      onmouseover="this.style.background='var(--acl)'" onmouseout="this.style.background=''">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div>
+          <span style="font-weight:600;font-size:12px">${escHtml(r.cust||'익명')}</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:6px">${r.date}</span>
+          <span class="bd ${r.ch==='스마트스토어'?'g':'b'}" style="margin-left:4px;font-size:9px">${r.ch}</span>
+        </div>
+        <span style="font-size:10px;color:var(--t3)">주문ID: ${i}</span>
+      </div>
+      <div style="font-size:11px;color:var(--t2);margin-top:3px">${escHtml(r.model||r.barcode||'—')} × ${r.qty}개 · ${(r.price||0).toLocaleString()}원</div>
+    </div>`).join('');
+}
+
+// 주문 선택
+function selectRetailOrder(idx) {
+  const r = DB.retail[idx];
+  if(!r) return;
+  selectedRetailOrder = {idx, r};
+
+  // 선택 미리보기
+  document.getElementById('rtn-selected-wrap').style.display = 'block';
+  document.getElementById('rtn-selected-preview').innerHTML = `
+    <b>고객명:</b> ${escHtml(r.cust||'—')}<br>
+    <b>상품:</b> ${escHtml(r.model||r.barcode||'—')}<br>
+    <b>채널:</b> ${r.ch} · <b>거래일:</b> ${r.date}<br>
+    <b>수량:</b> ${r.qty}개 · <b>금액:</b> ${(r.sales||0).toLocaleString()}원<br>
+    <b>주문ID:</b> ${idx}번`;
+  document.getElementById('rtn-qty').value = r.qty;
+
+  // 제출 버튼 활성화
+  const btn = document.getElementById('rtn-submit-btn');
+  btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+
+  // 선택 후 검색창 닫기
+  document.getElementById('rtn-order-wrap').style.display = 'none';
+}
+
+// 교환 안내 토글
+function toggleExchangeNote() {
+  const type = document.getElementById('rtn-type').value;
+  document.getElementById('rtn-exchange-note').style.display = type==='교환' ? 'block' : 'none';
+}
+
+// 반품/교환 확정
+function submitReturn() {
+  if(!selectedRetailOrder) { toast('⚠️ 주문을 먼저 선택해주세요'); return; }
+  const {idx, r} = selectedRetailOrder;
+  const type = document.getElementById('rtn-type').value;
+  const qty = parseInt(document.getElementById('rtn-qty').value||1);
+  const date = document.getElementById('rtn-date').value;
+  const reason = document.getElementById('rtn-reason').value;
+  const note = document.getElementById('rtn-note').value;
+
+  if(qty <= 0) { toast('⚠️ 수량을 입력해주세요'); return; }
+  if(qty > r.qty) { toast(`❌ 처리 수량(${qty})이 주문 수량(${r.qty})을 초과합니다`); return; }
+
+  const refundAmt = Math.round((r.price||0) * qty);
+  const newRecord = {
+    date, type, cust: r.cust, model: r.model||r.barcode||'—',
+    qty, reason, note, orderId: String(idx),
+    refundAmt, stockDone: true,
+    ch: r.ch, ispec: r.ispec||'—'
+  };
+
+  if(!DB.returns) DB.returns = [];
+  DB.returns.unshift(newRecord);
+
+  // 재고 처리
+  if(type === '반품') {
+    // 반품: 재고 증가 + 수불이력 추가
+    const lastStock = DB.inventory.length > 0 ? (Number(DB.inventory[0].stock)||0) : 0;
+    DB.inventory.unshift({
+      date, co: r.cust, type:'반품입고', item: r.model||r.barcode||r.type||'소매상품',
+      in: qty, out:'—', defect:'—',
+      stock: lastStock + qty,
+      recv: '반품처리', ship:'—', note: `반품 (사유: ${reason}) 주문ID:${idx}`
+    });
+    toast(`✅ 반품 처리 완료 — ${r.model||r.barcode||'상품'} ${qty}개 재고 복구`);
+  } else {
+    // 교환: 재고 복구(입고) + 신규 출고 2건
+    const lastStock = DB.inventory.length > 0 ? (Number(DB.inventory[0].stock)||0) : 0;
+    DB.inventory.unshift({
+      date, co: r.cust, type:'교환입고', item: r.model||r.barcode||r.type||'소매상품',
+      in: qty, out:'—', defect:'—',
+      stock: lastStock + qty,
+      recv: '교환처리', ship:'—', note: `교환 반품입고 주문ID:${idx}`
+    });
+    DB.inventory.unshift({
+      date, co: r.cust, type:'교환출고', item: r.model||r.barcode||r.type||'소매상품',
+      in:'—', out: qty, defect:'—',
+      stock: lastStock,
+      recv:'—', ship:'교환처리', note: `교환 재출고 주문ID:${idx}`
+    });
+    toast(`✅ 교환 처리 완료 — 수불이력 2건 기록됨`);
+  }
+
+  // 원본 거래 상태 업데이트
+  if(DB.retail[idx]) {
+    DB.retail[idx].status = type==='반품' ? '반품완료' : '교환처리';
+  }
+
+  saveTable('returns');
+  saveTable('inventory');
+  saveTable('retail');
+  renderAll();
+  cm('mo-return');
+  selectedRetailOrder = null;
+}
+
+// 반품 삭제
+function deleteReturn(idx) {
+  if(!confirm('이 반품/교환 이력을 삭제하겠습니까?')) return;
+  DB.returns.splice(idx, 1);
+  saveTable('returns');
+  renderReturns();
+  toast('🗑 반품/교환 이력이 삭제되었습니다');
+}
+
+// ─────────────────────────────────────────────
   document.getElementById('inv-body').innerHTML = DB.inventory.map((i,idx)=>`
     <tr>
       <td style="color:var(--t3)">${i.date.replace('2026-','')}</td>
@@ -2271,6 +2577,19 @@ function xlsxDownload(type) {
       ]
     },
 
+    // ── 반품/교환 ──
+    returns: {
+      filename: `반품교환_${dateStr}.xlsx`,
+      sheets: [{
+        name: '반품교환이력',
+        headers: ['처리일','유형','고객명','상품명','수량','사유','주문ID','환불금액','재고반영','비고'],
+        rows: (DB.returns||[]).map(r=>[
+          r.date, r.type, r.cust, r.model, r.qty, r.reason,
+          r.orderId, r.refundAmt||0, r.stockDone?'완료':'처리중', r.note||''
+        ])
+      }]
+    },
+
     // ── 소매 출고 ──
     retail_out: {
       filename: `소매출고_${dateStr}.xlsx`,
@@ -2411,7 +2730,7 @@ function renderAll() {
   renderCat(); renderBrand(); renderPartner(); renderProduct();
   renderIntakeRetail(); renderIntakeHDD(); renderRetail();
   renderWholesaleOut(); renderInventory(); renderRetailOut();
-  renderBarChart(); renderAnalysis(); calcKPI();
+  renderReturns(); renderBarChart(); renderAnalysis(); calcKPI();
   const inv = DB.inventory;
   if(inv?.length) document.getElementById('inv-total').textContent = inv[0].stock.toLocaleString();
 }
@@ -2422,7 +2741,7 @@ function renderAll() {
 //  ④ 오프라인 로컬 자동 백업  ⑤ 충돌 방지 (syncPaused)
 // ═══════════════════════════════════════════════════════════════════
 const FB_CONFIG = { apiKey:'', projectId:'', dbUrl:'' };
-const SYNC_TABLES = ['intake_retail','intake_hdd','retail','retail_out','wholesale_out','inventory'];
+const SYNC_TABLES = ['intake_retail','intake_hdd','retail','retail_out','returns','wholesale_out','inventory'];
 const LS_KEY='greeny_scm_backup', LS_CFG='greeny_fb_cfg', LS_USER='greeny_user_name';
 
 let fbReady=false, lastSyncAt=null, myUserId=null, myUserName='', syncPaused=false;
