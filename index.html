@@ -263,6 +263,7 @@ tbody tr:hover td{background:#faf9f7;}
   <div class="sb-grp">
     <div class="sb-lbl">판매 / 출고</div>
     <button class="ni" onclick="gp('retail',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2zM3 4h10l-1 10H4L3 4z"/></svg>소매관리<span class="nb" id="nb-retail">3</span></button>
+    <button class="ni" onclick="gp('retail_out',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v11M3 8l5 5 5-5M2 14h12"/></svg>소매출고</button>
     <button class="ni" onclick="gp('wholesale_out',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v11M3 8l5 5 5-5M2 14h12M1 3h14v2H1z"/></svg>도매출고</button>
   </div>
   <div class="sb-grp">
@@ -692,6 +693,27 @@ tbody tr:hover td{background:#faf9f7;}
   </div>
 </div>
 
+<!-- ══════════════ 소매출고 ══════════════ -->
+<div id="pg-retail_out" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">소매 출고</div><div class="dsc">재고에서 출고 → 수불이력 자동 기록 → 재고 차감</div></div><div class="sec-hd-r"><button class="btn sm dk" onclick="xlsxDownload('retail_out')">⬇ 엑셀 다운로드</button><button class="btn pr sm" onclick="openRetailOutModal()">+ 출고 등록</button></div></div>
+  <div class="sts-row">
+    <div class="sts-c"><div class="sts-num" style="color:var(--in)" id="ro-cnt">0</div><div class="sts-lbl">출고건수</div></div>
+    <div class="sts-c"><div class="sts-num" id="ro-qty">0</div><div class="sts-lbl">총 출고수량</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--ac)" id="ro-today">0</div><div class="sts-lbl">오늘 출고</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--wa)" id="ro-week">0</div><div class="sts-lbl">이번주 출고</div></div>
+  </div>
+  <div class="tbl-box">
+    <div class="tbl-bar">
+      <div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="품목 / 출고자 검색..." oninput="ft(this,'tb-ro')"></div>
+    </div>
+    <div class="tbl-scroll"><table id="tb-ro">
+      <thead><tr><th>출고일</th><th>품목</th><th>카테고리</th><th class="r">수량</th><th>출고자</th><th>비고</th><th>작업</th></tr></thead>
+      <tbody id="ro-body"></tbody>
+    </table></div>
+    <div class="tbl-ft"><span class="pg-info" id="ro-count">총 0건</span></div>
+  </div>
+</div>
+
 <!-- ══════════════ 재고현황 ══════════════ -->
 <div id="pg-inventory" class="pg">
   <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">재고 현황 (실시간)</div><div class="dsc">입고 - 출고 = 현재고 / 자동 계산</div></div><div class="sec-hd-r"><button class="btn sm dk" onclick="xlsxDownload('inventory')">⬇ 엑셀 다운로드</button></div></div>
@@ -705,7 +727,7 @@ tbody tr:hover td{background:#faf9f7;}
   <div class="tbl-box" style="margin-bottom:14px;">
     <div class="tbl-bar"><b style="font-size:12px;">수불 이력 (자동 계산)</b><span style="margin-left:auto;font-size:11px;color:var(--t3)">재고 = 전회 재고 + 입고 - 출고 - 불량</span></div>
     <div class="tbl-scroll"><table id="tb-inv">
-      <thead><tr><th>날짜</th><th>업체명</th><th>구분</th><th>품목</th><th class="r">입고</th><th class="r">출고</th><th class="r">불량</th><th class="r">재고</th><th>입고수령인</th><th>출고자</th><th>비고</th></tr></thead>
+      <thead><tr><th>날짜</th><th>업체명</th><th>구분</th><th>품목</th><th class="r">입고</th><th class="r">출고</th><th class="r">불량</th><th class="r">재고</th><th>입고수령인</th><th>출고자</th><th>비고</th><th>작업</th></tr></thead>
       <tbody id="inv-body"></tbody>
     </table></div>
   </div>
@@ -1067,6 +1089,49 @@ tbody tr:hover td{background:#faf9f7;}
   <div class="mo-ft"><button class="btn sm" onclick="cm('mo-ws')">취소</button><button class="btn pr sm" onclick="submitWholesaleOut()">출고 확정</button></div>
 </div></div></div>
 
+<!-- ══ 소매 출고 등록 모달 ══ -->
+<div class="mo" id="mo-ro"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">소매 출고 등록</div><button class="btn sm" onclick="cm('mo-ro')">✕</button></div>
+  <div class="mo-bd">
+    <div id="ro-stock-info" style="background:var(--acl);border-radius:var(--rmd);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--acd);display:none;">
+      <b>현재 재고:</b> <span id="ro-current-stock">—</span>
+    </div>
+    <div class="fgrid">
+      <div class="fg full"><label class="fl">품목 (재고에서 선택)</label>
+        <select class="fsl" id="ro-item" onchange="updateStockInfo()">
+          <option value="">-- 품목을 선택하세요 --</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">출고일</label>
+        <input class="fi" type="date" id="ro-date">
+      </div>
+      <div class="fg"><label class="fl">출고 수량</label>
+        <input class="fi" type="number" id="ro-qty" min="1" value="1" placeholder="출고할 수량">
+      </div>
+      <div class="fg"><label class="fl">출고자</label>
+        <input class="fi" type="text" id="ro-ship" placeholder="출고자 이름">
+      </div>
+      <div class="fg"><label class="fl">구분</label>
+        <select class="fsl" id="ro-ch">
+          <option>소매출고</option>
+          <option>샘플 출고</option>
+          <option>기타</option>
+        </select>
+      </div>
+      <div class="fg full"><label class="fl">비고</label>
+        <input class="fi" type="text" id="ro-note" placeholder="참고사항 (선택)">
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:8px 10px;background:var(--inl);border-radius:var(--rmd);font-size:11px;color:var(--in);">
+      ✅ 출고 확정 시 재고 자동 차감 · 수불이력 자동 기록
+    </div>
+  </div>
+  <div class="mo-ft">
+    <button class="btn sm" onclick="cm('mo-ro')">취소</button>
+    <button class="btn pr sm" onclick="submitRetailOut()">출고 확정</button>
+  </div>
+</div></div></div>
+
 <div id="toast"></div>
 
 <script>
@@ -1156,6 +1221,7 @@ const DB = {
     {date:'2026-04-13',type:'거래명세서',pid:'V0004',pname:'투데이',barcode:'TOD-OUT-0001',cat:'PT-HD',spec1:'1TB',spec2:'3.5" SATA',qty:50,price:8000,total:400000,ispec:'V0004-260413-PT-HD-1TB-3.5SATA-OUT-0001',status:'출고완료'},
     {date:'2026-04-13',type:'수출 CI',pid:'V0008',pname:'시멜리아',barcode:'SML-OUT-0001',cat:'PT-HD',spec1:'500GB',spec2:'2.5" SATA',qty:30,price:5000,total:150000,ispec:'V0008-260413-PT-HD-500GB-2.5SATA-OUT-0001',status:'명세서발행'},
   ],
+  retail_out: [],
   intake_hdd: [
     {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'5Q950009P66KA',size:'500GB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'V0006-26.03.20-HDD-500GB-3.5"-SATA-B-라-1-0002',status:'양품입고'},
     {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'WMAYP8164322',size:'500GB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'V0006-26.03.20-HDD-500GB-3.5"-SATA-B-라-1-0003',status:'양품입고'},
@@ -1357,7 +1423,7 @@ function renderRetail() {
 }
 
 function renderInventory() {
-  document.getElementById('inv-body').innerHTML = DB.inventory.map(i=>`
+  document.getElementById('inv-body').innerHTML = DB.inventory.map((i,idx)=>`
     <tr>
       <td style="color:var(--t3)">${i.date.replace('2026-','')}</td>
       <td>${i.co}</td>
@@ -1370,7 +1436,146 @@ function renderInventory() {
       <td style="color:var(--t3)">${i.recv}</td>
       <td style="color:var(--t3)">${i.ship}</td>
       <td style="font-size:11px;color:var(--t3)">${i.note}</td>
+      <td style="white-space:nowrap">
+        ${i.type==='입고' && Number(i.stock)>0 ? `<button class="btn sm pr" style="font-size:10px;padding:3px 8px;" onclick="openRetailOutFromInv(${idx})">출고</button>` : '—'}
+      </td>
     </tr>`).join('');
+}
+
+// ─── 소매출고 ───
+function renderRetailOut() {
+  if(!DB.retail_out) DB.retail_out = [];
+  const rows = DB.retail_out;
+  const tbody = document.getElementById('ro-body');
+  if(!tbody) return;
+  if(rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--t3);font-size:11px;">출고 내역이 없습니다. 재고현황에서 "출고" 버튼을 클릭하거나 상단 [+ 출고 등록]을 눌러주세요.</td></tr>`;
+  } else {
+    tbody.innerHTML = rows.map((r,i)=>`
+      <tr>
+        <td style="color:var(--t3)">${r.date}</td>
+        <td><b>${r.item}</b></td>
+        <td><span class="bd b">${r.cat||'—'}</span></td>
+        <td class="r"><b style="color:var(--er)">-${r.qty}</b></td>
+        <td>${r.ship||'—'}</td>
+        <td style="font-size:11px;color:var(--t3)">${r.note||'—'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn sm" style="font-size:10px;padding:3px 8px;color:var(--er);border-color:rgba(220,53,69,.3);" onclick="deleteRetailOut(${i})">삭제</button>
+        </td>
+      </tr>`).join('');
+  }
+  // 통계
+  const today = new Date().toISOString().slice(0,10);
+  const todayCnt = rows.filter(r=>r.date===today).reduce((s,r)=>s+(r.qty||0),0);
+  const weekAgo = new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+  const weekCnt = rows.filter(r=>r.date>=weekAgo).reduce((s,r)=>s+(r.qty||0),0);
+  const totalQty = rows.reduce((s,r)=>s+(r.qty||0),0);
+  if(document.getElementById('ro-cnt')) document.getElementById('ro-cnt').textContent = rows.length;
+  if(document.getElementById('ro-qty')) document.getElementById('ro-qty').textContent = totalQty;
+  if(document.getElementById('ro-today')) document.getElementById('ro-today').textContent = todayCnt;
+  if(document.getElementById('ro-week')) document.getElementById('ro-week').textContent = weekCnt;
+  if(document.getElementById('ro-count')) document.getElementById('ro-count').textContent = `총 ${rows.length}건`;
+}
+
+// 소매출고 모달 열기 — 품목 목록 동적 생성
+function openRetailOutModal(presetItem) {
+  const sel = document.getElementById('ro-item');
+  if(sel) {
+    sel.innerHTML = '<option value="">-- 품목을 선택하세요 --</option>' +
+      DB.inventory.filter(i=>i.type==='입고' && Number(i.stock)>0)
+        .map((i,idx)=>`<option value="${idx}">${i.item} (재고 ${i.stock}ea)</option>`).join('');
+    if(presetItem!==undefined) sel.value = presetItem;
+  }
+  // 오늘 날짜 기본값
+  const today = new Date().toISOString().slice(0,10);
+  const dateEl = document.getElementById('ro-date'); if(dateEl) dateEl.value = today;
+  const qtyEl = document.getElementById('ro-qty'); if(qtyEl) qtyEl.value = 1;
+  const shipEl = document.getElementById('ro-ship'); if(shipEl) shipEl.value = myUserName||'';
+  const noteEl = document.getElementById('ro-note'); if(noteEl) noteEl.value = '';
+  updateStockInfo();
+  om('mo-ro');
+}
+
+// 재고현황에서 바로 열기
+function openRetailOutFromInv(invIdx) {
+  openRetailOutModal(invIdx);
+}
+
+// 현재 재고 표시 업데이트
+function updateStockInfo() {
+  const sel = document.getElementById('ro-item');
+  const info = document.getElementById('ro-stock-info');
+  const txt = document.getElementById('ro-current-stock');
+  if(!sel || !info || !txt) return;
+  const idx = sel.value;
+  if(idx === '') { info.style.display='none'; return; }
+  const item = DB.inventory[parseInt(idx)];
+  if(!item) { info.style.display='none'; return; }
+  info.style.display='block';
+  txt.textContent = `${item.item} — ${Number(item.stock).toLocaleString()} ea`;
+}
+
+// 소매출고 확정
+function submitRetailOut() {
+  const sel = document.getElementById('ro-item');
+  const date = document.getElementById('ro-date').value;
+  const qty = parseInt(document.getElementById('ro-qty').value||0);
+  const ship = document.getElementById('ro-ship').value||'—';
+  const ch = document.getElementById('ro-ch').value||'소매출고';
+  const note = document.getElementById('ro-note').value||'';
+
+  if(sel.value === '') { toast('⚠️ 품목을 선택해주세요'); return; }
+  if(!qty || qty<=0) { toast('⚠️ 출고 수량을 입력해주세요'); return; }
+
+  const invIdx = parseInt(sel.value);
+  const invItem = DB.inventory[invIdx];
+  if(!invItem) { toast('⚠️ 재고 정보를 찾을 수 없습니다'); return; }
+
+  const currentStock = Number(invItem.stock)||0;
+  if(qty > currentStock) {
+    toast(`❌ 재고 부족! 현재 재고 ${currentStock}ea, 요청 ${qty}ea`);
+    return;
+  }
+
+  // 1. retail_out 데이터 추가
+  if(!DB.retail_out) DB.retail_out = [];
+  const cat = invItem.item && invItem.item.includes('HDD') ? 'PT-HD' : (invItem.item||'');
+  DB.retail_out.unshift({
+    date, item: invItem.item, cat, qty, ship, ch, note,
+    user: myUserName||'익명'
+  });
+
+  // 2. inventory에 출고 이력 추가 (새 행으로)
+  const newStock = currentStock - qty;
+  DB.inventory.unshift({
+    date, co: ch, type: '출고', item: invItem.item,
+    in: '—', out: qty, defect: '—',
+    stock: newStock,
+    recv: '—', ship, note: note || '소매출고'
+  });
+
+  // 3. 원본 재고 차감
+  DB.inventory[invIdx+1] = { ...invItem, stock: newStock }; // unshift로 인한 인덱스 시프트
+
+  // 저장 & 렌더
+  saveTable('inventory');
+  saveTable('retail_out');
+  renderAll();
+  cm('mo-ro');
+  toast(`✅ 소매 출고 확정 — ${invItem.item} ${qty}ea (잔여 ${newStock}ea)`);
+}
+
+function deleteRetailOut(idx) {
+  if(!confirm('이 출고 내역을 삭제하겠습니까?\n삭제 시 재고가 복구됩니다.')) return;
+  const r = DB.retail_out[idx]; if(!r) return;
+  // 재고 복구: 가장 최근 해당 품목의 재고에 qty 추가
+  const invMatch = DB.inventory.find(i=>i.item===r.item && i.type==='입고');
+  if(invMatch) invMatch.stock = Number(invMatch.stock||0) + r.qty;
+  DB.retail_out.splice(idx,1);
+  saveTable('inventory');
+  saveTable('retail_out');
+  renderAll();
+  toast(`🗑 출고 삭제 — 재고 ${r.qty}ea 복구됨`);
 }
 
 // ─── BAR CHART ───
@@ -1619,6 +1824,7 @@ const pageMeta={
   intake_retail:['소매 입고','입고 → 재고 자동 반영'],
   intake_wholesale:['도매 입고 (HDD)','대량 입고 수불 자동 연동'],
   retail:['소매관리','오프라인 · 온라인 전 채널 통합 관리'],
+  retail_out:['소매 출고','재고에서 출고 → 수불이력 자동 기록'],
   wholesale_out:['도매 출고','거래명세서 / CI 발행'],
   inventory:['재고 현황 (실시간)','입고-출고=현재고 자동 계산'],
   analysis:['소매 분석','KPI · 베스트 · 죽은재고'],
@@ -1639,7 +1845,7 @@ function handleTopAdd(){
   const id=pg.id.replace('pg-','');
   const map={dashboard:'mo-intake-retail',category:'mo-cat',brand:'mo-brand',partner:'mo-partner',
     product:'mo-prod',intake_retail:'mo-intake-retail',intake_wholesale:'mo-intake',
-    retail:'mo-retail',wholesale_out:'mo-ws',inventory:'mo-intake'};
+    retail:'mo-retail',retail_out:'mo-ro',wholesale_out:'mo-ws',inventory:'mo-intake'};
   // 수정 모드 초기화
   editTarget = null;
   const irBtn = document.querySelector('#mo-intake-retail .mo-ft .btn.pr');
@@ -2065,6 +2271,20 @@ function xlsxDownload(type) {
       ]
     },
 
+    // ── 소매 출고 ──
+    retail_out: {
+      filename: `소매출고_${dateStr}.xlsx`,
+      sheets: [
+        {
+          name: '소매출고',
+          headers: ['출고일','품목','카테고리','수량','출고자','구분','비고'],
+          rows: (DB.retail_out||[]).map(r=>[
+            r.date, r.item, r.cat||'', r.qty, r.ship||'', r.ch||'소매출고', r.note||''
+          ])
+        }
+      ]
+    },
+
     // ── 재고 현황 ──
     inventory: {
       filename: `재고현황_${dateStr}.xlsx`,
@@ -2190,10 +2410,10 @@ function setDate(){
 function renderAll() {
   renderCat(); renderBrand(); renderPartner(); renderProduct();
   renderIntakeRetail(); renderIntakeHDD(); renderRetail();
-  renderWholesaleOut(); renderInventory(); renderBarChart();
-  renderAnalysis(); calcKPI();
+  renderWholesaleOut(); renderInventory(); renderRetailOut();
+  renderBarChart(); renderAnalysis(); calcKPI();
   const inv = DB.inventory;
-  if(inv?.length) document.getElementById('inv-total').textContent = inv[inv.length-1].stock.toLocaleString();
+  if(inv?.length) document.getElementById('inv-total').textContent = inv[0].stock.toLocaleString();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2202,7 +2422,7 @@ function renderAll() {
 //  ④ 오프라인 로컬 자동 백업  ⑤ 충돌 방지 (syncPaused)
 // ═══════════════════════════════════════════════════════════════════
 const FB_CONFIG = { apiKey:'', projectId:'', dbUrl:'' };
-const SYNC_TABLES = ['intake_retail','intake_hdd','retail','wholesale_out','inventory'];
+const SYNC_TABLES = ['intake_retail','intake_hdd','retail','retail_out','wholesale_out','inventory'];
 const LS_KEY='greeny_scm_backup', LS_CFG='greeny_fb_cfg', LS_USER='greeny_user_name';
 
 let fbReady=false, lastSyncAt=null, myUserId=null, myUserName='', syncPaused=false;
