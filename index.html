@@ -262,13 +262,13 @@ tbody tr:hover td{background:#faf9f7;}
   </div>
   <div class="sb-grp">
     <div class="sb-lbl">판매 / 출고</div>
-    <button class="ni" onclick="gp('retail',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2zM3 4h10l-1 10H4L3 4z"/></svg>소매관리<span class="nb" id="nb-retail">3</span></button>
-    <button class="ni" onclick="gp('retail_out',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v11M3 8l5 5 5-5M2 14h12"/></svg>소매출고</button>
+    <button class="ni" onclick="gp('retail',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2zM3 4h10l-1 10H4L3 4z"/></svg>소매관리<span class="nb" id="nb-retail">0</span></button>
+    <button class="ni" onclick="gp('retail_out',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v11M3 8l5 5 5-5M2 14h12"/></svg>소매출고<span class="nb" id="nb-ro" style="display:none">0</span></button>
     <button class="ni" onclick="gp('wholesale_out',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v11M3 8l5 5 5-5M2 14h12M1 3h14v2H1z"/></svg>도매출고</button>
   </div>
   <div class="sb-grp">
     <div class="sb-lbl">재고 / 분석</div>
-    <button class="ni" onclick="gp('inventory',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v10H1zm2 2v6h10V5H3z"/></svg>재고현황<span class="nb" id="nb-inv">!</span></button>
+    <button class="ni" onclick="gp('inventory',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v10H1zm2 2v6h10V5H3z"/></svg>재고현황<span class="nb" id="nb-inv" style="display:none">0</span></button>
     <button class="ni" onclick="gp('analysis',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 13L5 7l3 3 4-6 3 2"/></svg>소매 분석</button>
     <button class="ni" onclick="gp('itemcode',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 4h2v8H2zm3 0h1v8H5zm2 0h2v8H7zm3 0h1v8h-1zm2 0h2v8h-2z"/></svg>아이템코드</button>
   </div>
@@ -1353,7 +1353,7 @@ const DB = {
 function calcKPI() {
   const totalSales = DB.retail.reduce((s,r)=>s+r.sales,0);
   const totalQty = DB.retail.reduce((s,r)=>s+r.qty,0);
-  const avgInv = 15; // 평균재고 (샘플)
+  const avgInv = 15;
   const turnover = totalQty / avgInv;
   const doi = 365 / turnover;
   document.getElementById('kpi-sales').textContent = totalSales.toLocaleString();
@@ -1363,6 +1363,53 @@ function calcKPI() {
   document.getElementById('r-qty').textContent = totalQty;
   document.getElementById('r-turn').textContent = turnover.toFixed(2);
   document.getElementById('r-days').textContent = Math.round(doi);
+
+  // ── 사이드바 뱃지 동적 업데이트 ──
+  updateBadges();
+}
+
+function updateBadges() {
+  // 소매관리: 출고대기 건수
+  const retailPending = DB.retail.filter(r => r.status === '출고대기' || r.status === '처리중').length;
+  const nbRetail = document.getElementById('nb-retail');
+  if(nbRetail) {
+    if(retailPending > 0) {
+      nbRetail.textContent = retailPending;
+      nbRetail.style.display = '';
+    } else {
+      nbRetail.style.display = 'none';
+    }
+  }
+
+  // 재고현황: 품절 or 재고 0 카테고리 수
+  const lowStock = DB.products ? DB.products.filter(p => p.stock === 0).length : 0;
+  const invAlerts = DB.inventory ? DB.inventory.filter(i => Number(i.stock) < 50 && i.type === '입고').length : 0;
+  const nbInv = document.getElementById('nb-inv');
+  if(nbInv) {
+    if(lowStock > 0 || invAlerts > 0) {
+      nbInv.textContent = lowStock > 0 ? lowStock : '!';
+      nbInv.style.display = '';
+    } else {
+      nbInv.style.display = 'none';
+    }
+  }
+
+  // 소매출고: 오늘 출고 건수
+  const today = new Date().toISOString().slice(0,10);
+  const todayOut = (DB.retail_out||[]).filter(r => r.date === today).length;
+  const nbRo = document.getElementById('nb-ro');
+  if(nbRo) {
+    nbRo.textContent = todayOut;
+    nbRo.style.display = todayOut > 0 ? '' : 'none';
+  }
+
+  // 반품: 미처리 반품 건수
+  const returnPending = (DB.returns||[]).filter(r => !r.stockDone).length;
+  const nbReturn = document.getElementById('nb-return');
+  if(nbReturn) {
+    nbReturn.textContent = returnPending;
+    nbReturn.style.display = returnPending > 0 ? '' : 'none';
+  }
 }
 
 // ─── RENDER TABLES ───
