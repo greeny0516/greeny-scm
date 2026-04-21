@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>그리니시스템 통합 SCM</title>
+<style>
+:root {
+  --sw: 224px;
+  --hh: 52px;
+  --bg: #f5f4f0;
+  --sf: #ffffff;
+  --b1: rgba(0,0,0,0.07);
+  --b2: rgba(0,0,0,0.14);
+  --b3: rgba(0,0,0,0.22);
+  --t1: #181816;
+  --t2: #6a6a64;
+  --t3: #a0a09a;
+  --ac: #0f7a5a;
+  --acl: #e0f2eb;
+  --acd: #074532;
+  --er: #dc3545;
+  --erl: #fdf0f1;
+  --wa: #c07a10;
+  --wal: #fef3e2;
+  --in: #1a5fa5;
+  --inl: #e5eef9;
+  --pu: #5046b8;
+  --pul: #eeecfd;
+  --rmd: 7px;
+  --rlg: 12px;
+  --rxl: 16px;
+  --sh: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;background:var(--bg);color:var(--t1);font-size:13px;display:flex;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+#sb{width:var(--sw);background:var(--sf);border-right:0.5px solid var(--b1);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
+.sb-logo{padding:16px 16px 12px;border-bottom:0.5px solid var(--b1);}
+.logo-row{display:flex;align-items:center;gap:9px;}
+.logo-mark{width:30px;height:30px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-mark svg{width:16px;height:16px;fill:white;}
+.logo-txt .nm{font-size:13px;font-weight:600;color:var(--t1);}
+.logo-txt .vr{font-size:10px;color:var(--t3);margin-top:1px;}
+.sb-grp{padding:10px 10px 4px;}
+.sb-lbl{font-size:9.5px;font-weight:600;color:var(--t3);letter-spacing:0.07em;text-transform:uppercase;padding:0 6px 5px;}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:var(--rmd);cursor:pointer;color:var(--t2);font-size:12.5px;border:none;background:none;width:100%;text-align:left;transition:all .1s;}
+.ni:hover{background:#f0efe9;color:var(--t1);}
+.ni.on{background:var(--acl);color:var(--acd);font-weight:500;}
+.ni svg{width:15px;height:15px;flex-shrink:0;opacity:.75;}
+.ni.on svg{opacity:1;}
+.nb{margin-left:auto;font-size:10px;background:var(--ac);color:white;padding:1px 6px;border-radius:20px;font-weight:500;}
+
+/* ── MAIN ── */
+#mn{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+#topbar{height:var(--hh);background:var(--sf);border-bottom:0.5px solid var(--b1);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;}
+.tb-title{font-size:14px;font-weight:600;}
+.tb-sub{font-size:11px;color:var(--t3);}
+.tb-spacer{flex:1;}
+.tb-date{font-size:11px;color:var(--t3);}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--rmd);border:0.5px solid var(--b2);background:var(--sf);color:var(--t1);font-size:12px;cursor:pointer;transition:all .1s;font-family:inherit;white-space:nowrap;}
+.btn:hover{background:var(--bg);}
+.btn.pr{background:var(--ac);color:white;border-color:transparent;}
+.btn.pr:hover{background:var(--acd);}
+.btn.sm{padding:5px 10px;font-size:11px;}
+.btn.dk{background:var(--t1);color:white;border-color:transparent;}
+.btn.dk:hover{background:#333;}
+
+#ct{flex:1;overflow-y:auto;padding:20px 24px;}
+.pg{display:none;animation:fi .15s ease;}
+.pg.on{display:block;}
+@keyframes fi{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── KPI CARDS ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
+.kc{background:var(--sf);border:0.5px solid var(--b1);border-radius:var(--rlg);padding:14px 16px;box-shadow:var(--sh);}
+.kc .lbl{font-size:10px;font-weight:500;color:var(--t3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+.kc .val{font-size:20px;font-weight:600;line-height:1.1;}
+.kc .sub{font-size:10px;color:var(--t3);margin-top:3px;}
+.kc .delta{font-size:10px;margin-top:3px;display:inline-flex;align-items:center;gap:2px;}
+.kc.gr .val{color:var(--ac);}
+.kc.bl .val{color:var(--in);}
+.kc.wa .val{color:var(--wa);}
+.kc.pu .val{color:var(--pu);}
+.kc.er .val{color:var(--er);}
+.delta.up{color:#16a34a;} .delta.dn{color:var(--er);}
+
+/* ── SECTION ── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sec-hd-l .ttl{font-size:13px;font-weight:600;}
+.sec-hd-l .dsc{font-size:11px;color:var(--t3);margin-top:2px;}
+.sec-hd-r{display:flex;gap:6px;align-items:center;}
+
+/* ── TABLE ── */
+.tbl-box{background:var(--sf);border:0.5px solid var(--b1);border-radius:var(--rlg);overflow:hidden;box-shadow:var(--sh);}
+.tbl-bar{padding:10px 14px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.srch{display:flex;align-items:center;gap:6px;padding:6px 10px;border:0.5px solid var(--b2);border-radius:var(--rmd);background:var(--bg);}
+.srch input{border:none;background:none;font-size:12px;color:var(--t1);font-family:inherit;outline:none;width:200px;}
+.srch input::placeholder{color:var(--t3);}
+.sel{padding:6px 10px;border:0.5px solid var(--b2);border-radius:var(--rmd);background:var(--bg);font-size:12px;color:var(--t1);font-family:inherit;outline:none;cursor:pointer;}
+.tbl-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead{background:#faf9f7;}
+th{font-size:10.5px;font-weight:600;color:var(--t3);text-align:left;padding:9px 12px;border-bottom:0.5px solid var(--b1);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;}
+th.r,td.r{text-align:right;}
+td{padding:9px 12px;border-bottom:0.5px solid var(--b1);font-size:12.5px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#faf9f7;}
+.tbl-ft{padding:10px 14px;border-top:0.5px solid var(--b1);display:flex;align-items:center;gap:4px;}
+.pg-btn{width:26px;height:26px;border-radius:5px;border:0.5px solid var(--b2);background:none;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;font-family:inherit;}
+.pg-btn.on{background:var(--ac);color:white;border-color:transparent;}
+.pg-info{font-size:11px;color:var(--t3);margin-left:8px;}
+
+/* ── BADGES ── */
+.bd{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:500;white-space:nowrap;}
+.bd.g{background:var(--acl);color:var(--acd);}
+.bd.b{background:var(--inl);color:var(--in);}
+.bd.w{background:var(--wal);color:var(--wa);}
+.bd.r{background:var(--erl);color:var(--er);}
+.bd.p{background:var(--pul);color:var(--pu);}
+.bd.gy{background:#f0efe9;color:#5a5a54;}
+.cd{font-family:monospace;font-size:11px;padding:2px 6px;background:#f0efe9;border:0.5px solid var(--b2);border-radius:4px;color:var(--t1);}
+
+/* ── PANELS ── */
+.panel{background:var(--sf);border:0.5px solid var(--b1);border-radius:var(--rlg);padding:18px;box-shadow:var(--sh);}
+.panel+.panel{margin-top:14px;}
+.p-ttl{font-size:12.5px;font-weight:600;margin-bottom:14px;color:var(--t1);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* ── FORM ── */
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg.full{grid-column:1/-1;}
+.fl{font-size:11px;font-weight:500;color:var(--t2);}
+.fi,.fsl{padding:7px 10px;border:0.5px solid var(--b2);border-radius:var(--rmd);background:var(--sf);font-size:12px;color:var(--t1);font-family:inherit;outline:none;transition:border-color .1s;width:100%;}
+.fi:focus,.fsl:focus{border-color:var(--ac);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-note{font-size:10px;color:var(--t3);margin-top:2px;}
+
+/* ── MODAL ── */
+.mo{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;overflow-y:auto;}
+.mo.op{display:block;}
+.mo-inner{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;box-sizing:border-box;}
+.mo-box{background:var(--sf);border-radius:var(--rxl);border:0.5px solid var(--b1);width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.mo-hd{padding:16px 20px 13px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between;}
+.mo-ttl{font-size:13px;font-weight:600;}
+.mo-bd{padding:20px;}
+.mo-ft{padding:13px 20px;border-top:0.5px solid var(--b1);display:flex;gap:7px;justify-content:flex-end;}
+
+/* ── CHARTS ── */
+.chart-wrap{position:relative;height:200px;margin-top:4px;}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:160px;padding:0 4px;}
+.bar-grp{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:4px 4px 0 0;transition:height .3s ease;min-height:2px;cursor:pointer;position:relative;}
+.bar:hover{filter:brightness(1.08);}
+.bar-lbl{font-size:9px;color:var(--t3);text-align:center;white-space:nowrap;}
+.bar-val{font-size:9px;font-weight:500;color:var(--t2);}
+
+/* ── MINI SPARKLINE ── */
+.spark{display:inline-block;vertical-align:middle;}
+
+/* ── INVENTORY METER ── */
+.inv-bar{height:6px;border-radius:3px;background:#e8e7e1;overflow:hidden;margin-top:4px;}
+.inv-fill{height:100%;border-radius:3px;background:var(--ac);transition:width .4s;}
+.inv-fill.warn{background:var(--wa);}
+.inv-fill.danger{background:var(--er);}
+
+/* ── UPLOAD ZONE ── */
+.upz{border:1.5px dashed var(--b2);border-radius:var(--rlg);padding:28px;text-align:center;cursor:pointer;transition:all .1s;}
+.upz:hover{background:var(--bg);border-color:var(--ac);}
+.upz-ico{font-size:26px;margin-bottom:8px;}
+.upz-txt{font-size:12px;color:var(--t2);}
+.upz-sub{font-size:10px;color:var(--t3);margin-top:3px;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--t1);color:white;padding:9px 16px;border-radius:var(--rmd);font-size:12px;opacity:0;transition:opacity .2s;z-index:999;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2);}
+#toast.on{opacity:1;}
+
+/* ── CODE PREVIEW ── */
+.cpre{background:#1c1c1a;color:#9fe1cb;font-family:monospace;font-size:12px;padding:12px 14px;border-radius:var(--rmd);margin-top:10px;line-height:1.6;}
+.cpre .k{color:#fac775;} .cpre .s{color:#5dcaa5;} .cpre .c{color:#4a4a44;}
+
+/* ── ANALYSIS CARDS ── */
+.anl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.anl-c{background:var(--sf);border:0.5px solid var(--b1);border-radius:var(--rlg);padding:14px;box-shadow:var(--sh);}
+.anl-lbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.anl-item{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b1);}
+.anl-item:last-child{border-bottom:none;}
+.anl-nm{font-size:11.5px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.anl-v{font-size:11.5px;font-weight:500;color:var(--t1);}
+
+/* ── FLOW DIAGRAM ── */
+.flow{display:flex;align-items:center;gap:0;overflow-x:auto;padding:4px 0 8px;}
+.fl-step{display:flex;flex-direction:column;align-items:center;min-width:100px;}
+.fl-box{padding:8px 12px;border-radius:var(--rmd);border:0.5px solid var(--b2);font-size:11px;font-weight:500;text-align:center;line-height:1.4;}
+.fl-box.src{background:var(--pul);border-color:var(--pu);color:var(--pu);}
+.fl-box.mdm{background:#f0efe9;border-color:var(--b3);color:var(--t2);}
+.fl-box.cod{background:var(--acl);border-color:var(--ac);color:var(--acd);}
+.fl-box.ret{background:var(--inl);border-color:var(--in);color:var(--in);}
+.fl-box.onl{background:var(--wal);border-color:var(--wa);color:var(--wa);}
+.fl-arrow{flex:1;min-width:24px;display:flex;align-items:center;}
+.fl-arrow::after{content:'';display:block;height:1px;width:100%;background:var(--b3);}
+.fl-arrow-head{color:var(--t3);font-size:10px;margin-left:-1px;}
+
+/* ── STOCK STATUS ── */
+.sts-row{display:flex;gap:10px;margin-bottom:16px;}
+.sts-c{flex:1;background:var(--sf);border:0.5px solid var(--b1);border-radius:var(--rlg);padding:12px 14px;box-shadow:var(--sh);}
+.sts-num{font-size:18px;font-weight:600;}
+.sts-lbl{font-size:10px;color:var(--t3);margin-top:2px;}
+
+/* ── DATE FILTER ── */
+.df{display:flex;align-items:center;gap:6px;}
+.df input[type=date]{padding:5px 8px;border:0.5px solid var(--b2);border-radius:var(--rmd);background:var(--bg);font-size:11px;color:var(--t1);font-family:inherit;outline:none;}
+.df-sep{color:var(--t3);font-size:11px;}
+
+/* ── PROGRESS BADGE ── */
+.prog-wrap{display:flex;align-items:center;gap:6px;}
+.prog{height:4px;border-radius:2px;background:#e8e7e1;overflow:hidden;width:60px;}
+.prog-fill{height:100%;border-radius:2px;background:var(--ac);}
+
+/* tabs */
+.tabs{display:flex;gap:0;border-bottom:0.5px solid var(--b1);margin-bottom:16px;}
+.tab{padding:8px 14px;font-size:12px;color:var(--t3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-0.5px;font-family:inherit;transition:all .1s;}
+.tab.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:500;}
+.tab:hover:not(.on){color:var(--t2);}
+.tab-pg{display:none;} .tab-pg.on{display:block;}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ───────────── SIDEBAR ───────────── -->
+<nav id="sb">
+  <div class="sb-logo">
+    <div class="logo-row">
+      <div class="logo-mark"><svg viewBox="0 0 16 16"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg></div>
+      <div class="logo-txt"><div class="nm">그리니시스템</div><div class="vr">통합 SCM v2.0</div></div>
+    </div>
+  </div>
+  <div class="sb-grp">
+    <div class="sb-lbl">대시보드</div>
+    <button class="ni on" onclick="gp('dashboard',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6v6H1zm8 0h6v6H9zM1 9h6v6H1zm8 0h6v6H9z"/></svg>대시보드</button>
+  </div>
+  <div class="sb-grp">
+    <div class="sb-lbl">마스터 관리</div>
+    <button class="ni" onclick="gp('category',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h4v4H1zm5 0h4v4H6zm5 0h4v4h-4zM1 6h4v4H1zm5 0h4v4H6zm5 0h4v4h-4zM1 11h4v4H1zm5 0h4v4H6zm5 0h4v4h-4z"/></svg>카테고리</button>
+    <button class="ni" onclick="gp('brand',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 1l14 6-6 2-2 6L1 1z"/></svg>브랜드</button>
+    <button class="ni" onclick="gp('partner',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a3 3 0 100 6A3 3 0 008 1zM3 14a5 5 0 0110 0H3z"/></svg>파트너</button>
+    <button class="ni" onclick="gp('product',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v2H1zm1 3h12l-1 8H3L2 6z"/></svg>상품 MDM</button>
+  </div>
+  <div class="sb-grp">
+    <div class="sb-lbl">입고 관리</div>
+    <button class="ni" onclick="gp('intake_retail',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v11M3 8l5 5 5-5M2 14h12"/></svg>소매 입고</button>
+    <button class="ni" onclick="gp('intake_wholesale',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v11M3 8l5 5 5-5M2 14h12"/></svg>도매 입고</button>
+  </div>
+  <div class="sb-grp">
+    <div class="sb-lbl">판매 / 출고</div>
+    <button class="ni" onclick="gp('retail',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v2H2zM3 4h10l-1 10H4L3 4z"/></svg>소매관리<span class="nb" id="nb-retail">3</span></button>
+    <button class="ni" onclick="gp('wholesale_out',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v11M3 8l5 5 5-5M2 14h12M1 3h14v2H1z"/></svg>도매출고</button>
+  </div>
+  <div class="sb-grp">
+    <div class="sb-lbl">재고 / 분석</div>
+    <button class="ni" onclick="gp('inventory',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v10H1zm2 2v6h10V5H3z"/></svg>재고현황<span class="nb" id="nb-inv">!</span></button>
+    <button class="ni" onclick="gp('analysis',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 13L5 7l3 3 4-6 3 2"/></svg>소매 분석</button>
+    <button class="ni" onclick="gp('itemcode',this)"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 4h2v8H2zm3 0h1v8H5zm2 0h2v8H7zm3 0h1v8h-1zm2 0h2v8h-2z"/></svg>아이템코드</button>
+  </div>
+</nav>
+
+<!-- ───────────── MAIN ───────────── -->
+<div id="mn">
+  <div id="topbar">
+    <div><span class="tb-title" id="pg-ttl">대시보드</span></div>
+    <span class="tb-sub" id="pg-sub">전체 현황</span>
+    <div class="tb-spacer"></div>
+    <div class="df">
+      <input type="date" id="dt-from" value="2026-03-01">
+      <span class="df-sep">~</span>
+      <input type="date" id="dt-to" value="2026-04-14">
+    </div>
+    <button class="btn sm" onclick="toast('데이터 새로고침 완료')">↻ 새로고침</button>
+    <!-- 접속자 현황 -->
+    <div id="presence-list" style="display:flex;gap:4px;flex-wrap:wrap;max-width:280px;"></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0;">
+      <span id="sync-status" style="font-size:11px;color:var(--t3);">초기화 중...</span>
+      <span id="sync-time" style="font-size:10px;color:var(--t3);"></span>
+    </div>
+    <button class="btn sm" style="font-size:11px;flex-shrink:0;" onclick="showSetupBanner()">⚙ DB 설정</button>
+    <button class="btn pr sm" id="top-add" onclick="handleTopAdd()">+ 추가</button>
+  </div>
+
+  <div id="ct">
+
+<!-- ══════════════ DASHBOARD ══════════════ -->
+<div id="pg-dashboard" class="pg on">
+  <!-- KPI 6 cards -->
+  <div class="kpi-grid">
+    <div class="kc gr"><div class="lbl">총 재고</div><div class="val" id="kpi-stock">1,022</div><div class="sub">ea (수불대장)</div></div>
+    <div class="kc bl"><div class="lbl">등록 파트너</div><div class="val">1,400</div><div class="sub">Vendor / Customer</div></div>
+    <div class="kc"><div class="lbl">소매 매출</div><div class="val" id="kpi-sales">1,719,000</div><div class="sub delta up">↑ 이번 달</div></div>
+    <div class="kc wa"><div class="lbl">판매 미처리</div><div class="val">3</div><div class="sub">건 출고대기</div></div>
+    <div class="kc pu"><div class="lbl">카테고리</div><div class="val">26</div><div class="sub">Main 7 / Sub 19</div></div>
+    <div class="kc er"><div class="lbl">AI정제 오류</div><div class="val">1</div><div class="sub">수동 확인 필요</div></div>
+  </div>
+
+  <!-- 데이터 흐름 -->
+  <div class="panel" style="margin-bottom:14px;">
+    <div class="p-ttl">데이터 흐름 — 통합 관계형 구조</div>
+    <div class="flow">
+      <div class="fl-step"><div class="fl-box src">파트너<br>(Vendor)</div></div>
+      <div class="fl-arrow"></div><div class="fl-arrow-head">▶</div>
+      <div class="fl-step"><div class="fl-box mdm">상품 MDM<br>기본정보</div></div>
+      <div class="fl-arrow"></div><div class="fl-arrow-head">▶</div>
+      <div class="fl-step"><div class="fl-box mdm">입고<br>(소매/도매)</div></div>
+      <div class="fl-arrow"></div><div class="fl-arrow-head">▶</div>
+      <div class="fl-step"><div class="fl-box cod">아이템코드<br>발행</div></div>
+      <div class="fl-arrow"></div><div class="fl-arrow-head">▶</div>
+      <div class="fl-step"><div class="fl-box mdm">재고<br>실시간</div></div>
+      <div class="fl-arrow"></div><div class="fl-arrow-head">▶</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="fl-box ret">소매 출고</div>
+        <div class="fl-box onl">온라인 판매</div>
+        <div class="fl-box" style="background:var(--erl);border-color:var(--er);color:var(--er);font-size:11px;font-weight:500;padding:8px 12px;border-radius:7px;text-align:center;">도매 출고</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- 수불 요약 -->
+    <div class="panel">
+      <div class="p-ttl">수불 현황 (HDD 기준)</div>
+      <div class="sts-row" style="margin-bottom:12px;">
+        <div class="sts-c"><div class="sts-num" style="color:var(--ac)">1,563</div><div class="sts-lbl">총 입고</div></div>
+        <div class="sts-c"><div class="sts-num" style="color:var(--er)">541</div><div class="sts-lbl">불량/반품</div></div>
+        <div class="sts-c"><div class="sts-num" style="color:var(--in)">1,022</div><div class="sts-lbl">현재 재고</div></div>
+      </div>
+      <table>
+        <thead><tr><th>날짜</th><th>업체</th><th>구분</th><th class="r">입고</th><th class="r">재고</th></tr></thead>
+        <tbody>
+          <tr><td>04.10</td><td>투데이</td><td><span class="bd b">입고</span></td><td class="r">52</td><td class="r"><b>1,022</b></td></tr>
+          <tr><td>04.03</td><td>투데이</td><td><span class="bd b">입고</span></td><td class="r">59</td><td class="r">992</td></tr>
+          <tr><td>04.02</td><td>신기종합메탈</td><td><span class="bd b">입고</span></td><td class="r">164</td><td class="r">945</td></tr>
+          <tr><td>03.27</td><td>투데이</td><td><span class="bd b">입고</span></td><td class="r">54</td><td class="r">807</td></tr>
+          <tr><td>03.24</td><td>소매</td><td><span class="bd w">출고</span></td><td class="r">—</td><td class="r">473</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 소매 판매 현황 -->
+    <div class="panel">
+      <div class="p-ttl">소매 판매 현황</div>
+      <div style="margin-bottom:12px;">
+        <div class="bar-chart" id="bc-monthly"></div>
+        <div style="text-align:center;font-size:10px;color:var(--t3);margin-top:4px;">월별 판매 건수</div>
+      </div>
+      <table>
+        <thead><tr><th>판매일</th><th>채널</th><th>품목</th><th class="r">금액</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td>03.03</td><td>스마트스토어</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">레노버 씽크북</td><td class="r">319,000</td><td><span class="bd w">대기</span></td></tr>
+          <tr><td>03.04</td><td>스마트스토어</td><td style="font-size:11px;">LG그램 15Z990</td><td class="r">400,000</td><td><span class="bd w">대기</span></td></tr>
+          <tr><td>03.04</td><td>옥션</td><td style="font-size:11px;">모니터 10ea</td><td class="r">1,000,000</td><td><span class="bd b">처리중</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 실시간 현황 패널 -->
+  <div class="g2" style="margin-top:14px;margin-bottom:0;">
+    <div class="panel">
+      <div class="p-ttl" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>&#128101; 현재 접속자</span>
+        <span id="presence-count" style="font-size:11px;color:var(--t3);">Firebase 연결 전</span>
+      </div>
+      <div id="presence-list-dash" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;margin-bottom:8px;"></div>
+      <div style="font-size:11px;color:var(--t3);">Firebase 연결 시 팀원이 실시간으로 표시됩니다</div>
+    </div>
+    <div class="panel">
+      <div class="p-ttl">&#128203; 최근 변경 이력</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr>
+            <th style="font-size:10px;color:var(--t3);text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--b1);">시각</th>
+            <th style="font-size:10px;color:var(--t3);text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--b1);">작성자</th>
+            <th style="font-size:10px;color:var(--t3);text-align:left;padding:6px 8px;border-bottom:0.5px solid var(--b1);">화면</th>
+            <th style="font-size:10px;color:var(--t3);text-align:right;padding:6px 8px;border-bottom:0.5px solid var(--b1);">건수</th>
+          </tr></thead>
+          <tbody id="changelog-body">
+            <tr><td colspan="4" style="text-align:center;padding:16px;color:var(--t3);font-size:11px;">Firebase 연결 후 이력이 표시됩니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 소매 분석 미리보기 -->
+  <div class="g3" style="margin-top:14px;">
+    <div class="panel">
+      <div class="p-ttl">🏆 베스트 상품 (수량)</div>
+      <div class="anl-item"><div class="anl-nm">MACBOOK 2022 M2 13인치</div><div class="anl-v">8 ea</div></div>
+      <div class="anl-item"><div class="anl-nm">MACBOOK 2024 M4 PRO</div><div class="anl-v">1 ea</div></div>
+      <div class="anl-item"><div class="anl-nm">LENOVO L390 i7</div><div class="anl-v">2 ea</div></div>
+      <div class="anl-item"><div class="anl-nm">NT950XCR i5</div><div class="anl-v">1 ea</div></div>
+    </div>
+    <div class="panel">
+      <div class="p-ttl">💰 마진 우수 상품</div>
+      <div class="anl-item"><div class="anl-nm">레노버 씽크북 15-IIL</div><div class="anl-v" style="color:var(--ac)">319,000원</div></div>
+      <div class="anl-item"><div class="anl-nm">LG그램 15Z990 i5</div><div class="anl-v" style="color:var(--ac)">400,000원</div></div>
+      <div class="anl-item"><div class="anl-nm">모니터 (10ea)</div><div class="anl-v" style="color:var(--ac)">1,000,000원</div></div>
+    </div>
+    <div class="panel">
+      <div class="p-ttl">💀 죽은 재고 위험</div>
+      <div class="anl-item"><div class="anl-nm">MACBOOK 2020 M1</div><div class="anl-v" style="color:var(--er)">2 ea</div></div>
+      <div class="anl-item"><div class="anl-nm">MAC MINI i3</div><div class="anl-v" style="color:var(--er)">2 ea</div></div>
+      <div class="anl-item"><div class="anl-nm">LENOVO X1 YOGA</div><div class="anl-v" style="color:var(--er)">1 ea</div></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--t3)">재고 있음 + 30일 이상 미판매</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CATEGORY ══════════════ -->
+<div id="pg-category" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">카테고리 마스터</div><div class="dsc">Main / Sub / Integrated Code 통합 관리 — 26개 카테고리</div></div><div class="sec-hd-r"><button class="btn pr sm" onclick="om('mo-cat')">+ 카테고리 추가</button></div></div>
+  <div class="tbl-box">
+    <div class="tbl-bar"><div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="카테고리 검색..." oninput="ft(this,'tb-cat')"></div><select class="sel" onchange="filterCatMain(this)"><option value="">전체 Main</option><option>DESKTOP</option><option>LAPTOP</option><option>PARTS</option><option>SERVER</option><option>SMARTPHONE</option><option>MONITOR</option></select></div>
+    <div class="tbl-scroll"><table id="tb-cat">
+      <thead><tr><th>Category ID</th><th>Main Category</th><th>Sub Category</th><th>Integrated Code</th><th>Main Short</th><th>Sub Short</th><th>설명</th></tr></thead>
+      <tbody id="cat-body"></tbody>
+    </table></div>
+    <div class="tbl-ft"><button class="pg-btn on">1</button><button class="pg-btn">2</button><span class="pg-info">총 26개 카테고리</span></div>
+  </div>
+</div>
+
+<!-- ══════════════ BRAND ══════════════ -->
+<div id="pg-brand" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">브랜드 마스터</div><div class="dsc">영문 브랜드 38개 — Short 코드 자동 생성</div></div><div class="sec-hd-r"><button class="btn pr sm" onclick="om('mo-brand')">+ 브랜드 추가</button></div></div>
+  <div class="tbl-box">
+    <div class="tbl-bar"><div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="브랜드 검색..." oninput="ft(this,'tb-brand')"></div></div>
+    <div class="tbl-scroll"><table id="tb-brand">
+      <thead><tr><th>브랜드명 (영문)</th><th>Brand Short</th><th>코드 예시</th><th>연결 상품수</th></tr></thead>
+      <tbody id="brand-body"></tbody>
+    </table></div>
+    <div class="tbl-ft"><span class="pg-info">총 38개 브랜드</span></div>
+  </div>
+</div>
+
+<!-- ══════════════ PARTNER ══════════════ -->
+<div id="pg-partner" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">파트너 ID 마스터</div><div class="dsc">Vendor / Customer / Dual — 1,400개 파트너</div></div><div class="sec-hd-r"><button class="btn pr sm" onclick="om('mo-partner')">+ 파트너 추가</button></div></div>
+  <div class="tbl-box">
+    <div class="tbl-bar"><div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="파트너명 / ID 검색..." oninput="ft(this,'tb-partner')"></div><select class="sel"><option value="">전체 구분</option><option>Vendor</option><option>Customer</option><option>Dual</option></select></div>
+    <div class="tbl-scroll"><table id="tb-partner">
+      <thead><tr><th>Partner ID</th><th>파트너명</th><th>약칭</th><th>구분</th><th>등록일</th><th>거래 유형</th></tr></thead>
+      <tbody id="partner-body"></tbody>
+    </table></div>
+    <div class="tbl-ft"><button class="pg-btn on">1</button><button class="pg-btn">2</button><button class="pg-btn">…</button><button class="pg-btn">140</button><span class="pg-info">총 1,400개 파트너</span></div>
+  </div>
+</div>
+
+<!-- ══════════════ PRODUCT MDM ══════════════ -->
+<div id="pg-product" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">상품 기본정보 (MDM)</div><div class="dsc">카테고리 → 브랜드 → 모델 계층 구조 / 중복 없는 마스터 데이터</div></div><div class="sec-hd-r"><button class="btn pr sm" onclick="om('mo-prod')">+ 상품 등록</button></div></div>
+  <!-- 코드 생성기 -->
+  <div class="panel" style="margin-bottom:14px;">
+    <div class="p-ttl">아이템 코드 생성기</div>
+    <div class="fgrid">
+      <div class="fg"><label class="fl">Main Category</label><select class="fsl" id="g-main" onchange="gc()"><option value="DT">DESKTOP</option><option value="LP">LAPTOP</option><option value="PT">PARTS</option><option value="SV">SERVER</option><option value="SP">SMARTPHONE</option><option value="MN">MONITOR</option></select></div>
+      <div class="fg"><label class="fl">Sub Category</label><select class="fsl" id="g-sub" onchange="gc()"><option value="MT">MT (미들타워)</option><option value="ST">ST (슬림)</option><option value="GE">GE (일반)</option><option value="HD">HD</option><option value="SD">SD</option><option value="CP">CP (CPU)</option><option value="RM">RM (RAM)</option></select></div>
+      <div class="fg"><label class="fl">Brand Short</label><select class="fsl" id="g-brand" onchange="gc()"><option value="SS">SS (SAMSUNG)</option><option value="LG">LG</option><option value="APL">APL (APPLE)</option><option value="LEN">LEN (LENOVO)</option><option value="DEL">DEL (DELL)</option><option value="HP">HP</option><option value="HTC">HTC (HITACHI)</option><option value="WDC">WDC (WESTERN DIGITAL)</option></select></div>
+      <div class="fg"><label class="fl">모델 식별코드</label><input class="fi" id="g-model" type="text" placeholder="예: DB400, MACBOOK2024" oninput="gc()"></div>
+    </div>
+    <div class="cpre"><span class="c">// 생성된 통합 아이템 코드</span><br><span class="k">ItemCode</span> = "<span class="s" id="gc-res">DT-MT-SS-</span>"</div>
+  </div>
+  <div class="tbl-box">
+    <div class="tbl-bar"><div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="모델명 / 코드 검색..." oninput="ft(this,'tb-prod')"></div><select class="sel"><option>전체 카테고리</option><option>LP-GE (LAPTOP)</option><option>DT-MT (DESKTOP)</option><option>PT-HD (HDD)</option></select></div>
+    <div class="tbl-scroll"><table id="tb-prod">
+      <thead><tr><th>Item Code</th><th>Category</th><th>Brand</th><th>Model (정제)</th><th>통합 스펙</th><th>품질등급</th><th>재고</th><th>상태</th></tr></thead>
+      <tbody id="prod-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ══════════════ 소매 입고 ══════════════ -->
+<div id="pg-intake_retail" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">소매 입고</div><div class="dsc">소매용 상품 입고 → 위치·통합스펙 자동 생성 → 재고 반영</div></div><div class="sec-hd-r"><button class="btn sm dk" onclick="xlsxDownload('intake_retail')">⬇ 엑셀 다운로드</button><button class="btn sm" onclick="simUploadPage('intake_retail')">⬆ 엑셀 업로드</button><button class="btn pr sm" onclick="om('mo-intake-retail')">+ 입고 등록</button></div></div>
+  <div class="sts-row">
+    <div class="sts-c"><div class="sts-num" style="color:var(--ac)" id="ir-cnt">10</div><div class="sts-lbl">입고건수</div></div>
+    <div class="sts-c"><div class="sts-num" id="ir-qty">25</div><div class="sts-lbl">총 입고수량</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--er)" id="ir-err">0</div><div class="sts-lbl">스펙오류</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--wa)" id="ir-pend">3</div><div class="sts-lbl">AI정제 대기</div></div>
+  </div>
+  <div class="tbl-box">
+    <div class="tbl-bar">
+      <div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="파트너명 / 바코드 / 모델 검색..." oninput="ft(this,'tb-inret')"></div>
+      <select class="sel"><option value="">전체 카테고리</option><option>LP-GE</option><option>DT-MT</option><option>MN-GE</option><option>PT-HD</option></select>
+      <select class="sel"><option value="">전체 품질</option><option>양품</option><option>A등급</option><option>B등급</option><option>불량</option></select>
+      <select class="sel"><option value="">전체 상태</option><option>완료</option><option>검수중</option><option>오류</option></select>
+    </div>
+    <div class="tbl-scroll"><table id="tb-inret">
+      <thead><tr><th>입고일</th><th>Partner ID</th><th>파트너명</th><th>바코드/모델</th><th>카테고리</th><th>브랜드</th><th>스펙1</th><th>스펙2</th><th>위치 ID</th><th>통합스펙 (자동생성)</th><th class="r">수량</th><th>품질</th><th>Item Code</th><th>상태</th></tr></thead>
+      <tbody id="inret-body"></tbody>
+    </table></div>
+    <div class="tbl-ft"><span class="pg-info" id="inret-count">총 10건</span></div>
+  </div>
+</div>
+
+<!-- ══════════════ 도매 입고 ══════════════ -->
+<div id="pg-intake_wholesale" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">도매 입고 (HDD 통합)</div><div class="dsc">파트너 대량 입고 → 수불대장 자동 연동 — 945건</div></div><div class="sec-hd-r"><button class="btn sm dk" onclick="xlsxDownload('intake_wholesale')">⬇ 엑셀 다운로드</button><button class="btn sm" onclick="simUploadPage('intake_wholesale')">⬆ 엑셀 업로드</button><button class="btn pr sm" onclick="om('mo-intake')">+ 입고 등록</button></div></div>
+  <div class="sts-row">
+    <div class="sts-c"><div class="sts-num" style="color:var(--ac)">1,563</div><div class="sts-lbl">총 입고 수량</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--er)">541</div><div class="sts-lbl">불량/반품</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--in)">1,022</div><div class="sts-lbl">양품 재고</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--wa)">43</div><div class="sts-lbl">장기재고</div></div>
+  </div>
+  <div class="tbl-box">
+    <div class="tbl-bar"><div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="모델명 / 파트너 검색..." oninput="ft(this,'tb-inhdd')"></div><select class="sel"><option>전체 용량</option><option>500GB</option><option>1TB</option><option>2TB</option><option>3TB</option><option>4TB</option></select><select class="sel"><option>전체 상태</option><option>양품입고</option><option>장기재고</option></select></div>
+    <div class="tbl-scroll"><table id="tb-inhdd">
+      <thead><tr><th>입고일</th><th>Partner ID</th><th>파트너명</th><th>바코드 모델</th><th>용량</th><th>인치</th><th>규격</th><th>위치</th><th>통합스펙 (자동생성)</th><th>상태</th></tr></thead>
+      <tbody id="inhdd-body"></tbody>
+    </table></div>
+    <div class="tbl-ft"><button class="pg-btn on">1</button><button class="pg-btn">2</button><button class="pg-btn">…</button><button class="pg-btn">95</button><span class="pg-info">총 945건</span></div>
+  </div>
+</div>
+
+<!-- ══════════════ 소매관리 (온라인 통합) ══════════════ -->
+<div id="pg-retail" class="pg">
+  <!-- KPI -->
+  <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);">
+    <div class="kc gr"><div class="lbl">총 매출</div><div class="val" id="r-sales">1,719,000</div><div class="sub">원</div></div>
+    <div class="kc"><div class="lbl">총 마진</div><div class="val" id="r-margin">1,719,000</div><div class="sub">원</div></div>
+    <div class="kc bl"><div class="lbl">평균 마진율</div><div class="val" id="r-margin-rate">—</div><div class="sub">총마진/총매출</div></div>
+    <div class="kc"><div class="lbl">총 판매수량</div><div class="val" id="r-qty">12</div><div class="sub">ea</div></div>
+    <div class="kc wa"><div class="lbl">재고회전율</div><div class="val" id="r-turn">—</div><div class="sub">판매/평균재고</div></div>
+    <div class="kc er"><div class="lbl">재고일수</div><div class="val" id="r-days">—</div><div class="sub">365/회전율</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="st('rt',0,this)">거래 내역</button>
+    <button class="tab" onclick="st('rt',1,this)">상품 분석</button>
+    <button class="tab" onclick="st('rt',2,this)">반품/교환</button>
+  </div>
+
+  <div class="tab-pg on" id="rt-0">
+    <div class="sec-hd">
+      <div class="sec-hd-l"><div class="ttl">소매 거래 내역</div><div class="dsc">오프라인 직판 · 스마트스토어 · 옥션 등 전 채널 통합</div></div>
+      <div class="sec-hd-r">
+        <button class="btn sm dk" onclick="xlsxDownload('retail')">⬇ 엑셀 다운로드</button>
+        <button class="btn sm" onclick="simUploadPage('retail')">⬆ 엑셀 업로드</button>
+        <button class="btn pr sm" onclick="om('mo-retail')">+ 거래 등록</button>
+      </div>
+    </div>
+    <div class="tbl-box">
+      <div class="tbl-bar">
+        <div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="상품명 / 고객명 / 채널..." oninput="ft(this,'tb-ret')"></div>
+        <select class="sel" onchange="filterRetailChannel(this)">
+          <option value="">전체 채널</option>
+          <option>직판 (오프라인)</option>
+          <option>스마트스토어</option>
+          <option>옥션</option>
+          <option>쿠팡</option>
+          <option>G마켓</option>
+          <option>11번가</option>
+        </select>
+        <select class="sel" onchange="filterRetailType(this)">
+          <option value="">전체 종류</option>
+          <option>노트북</option>
+          <option>데스크탑</option>
+          <option>모니터</option>
+          <option>스마트폰</option>
+          <option>HDD</option>
+          <option>기타 부품</option>
+        </select>
+        <select class="sel">
+          <option>전체 상태</option>
+          <option>출고대기</option>
+          <option>처리중</option>
+          <option>판매완료</option>
+        </select>
+      </div>
+      <div class="tbl-scroll"><table id="tb-ret">
+        <thead><tr><th>거래일</th><th>판매채널</th><th>종류</th><th>바코드/모델</th><th>통합스펙</th><th>옵션</th><th class="r">수량</th><th class="r">판매단가</th><th class="r">매출</th><th>고객명</th><th>송장번호</th><th>상태</th></tr></thead>
+        <tbody id="ret-body"></tbody>
+      </table></div>
+      <div class="tbl-ft"><span class="pg-info" id="ret-count">총 3건</span></div>
+    </div>
+  </div>
+
+  <div class="tab-pg" id="rt-1">
+    <div class="anl-grid">
+      <div class="anl-c"><div class="anl-lbl">🏆 베스트 상품 (매출)</div><div id="best-sales"></div></div>
+      <div class="anl-c"><div class="anl-lbl">🏆 베스트 상품 (수량)</div><div id="best-qty"></div></div>
+      <div class="anl-c"><div class="anl-lbl">💰 마진 우수</div><div id="best-margin"></div></div>
+    </div>
+    <div class="panel">
+      <div class="p-ttl">💀 죽은 재고 (30일+ 미판매)</div>
+      <table><thead><tr><th>상품명</th><th>카테고리</th><th class="r">재고수량</th><th>최종판매일</th><th>경과일수</th><th>조치</th></tr></thead>
+      <tbody id="dead-body"></tbody></table>
+    </div>
+  </div>
+
+  <div class="tab-pg" id="rt-2">
+    <div class="panel"><div class="p-ttl">반품 / 교환 이력</div>
+    <table><thead><tr><th>거래일</th><th>채널</th><th>모델명</th><th>반품일</th><th>교환일</th><th>사유</th><th>처리상태</th></tr></thead>
+    <tbody><tr><td colspan="7" style="text-align:center;padding:28px;color:var(--t3);">반품/교환 이력이 없습니다</td></tr></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 도매출고 ══════════════ -->
+<div id="pg-wholesale_out" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">도매 출고</div><div class="dsc">재고에서 출고 → 통합스펙 자동 생성 → 거래명세서 발행</div></div><div class="sec-hd-r"><button class="btn sm dk" onclick="xlsxDownload('wholesale_out')">⬇ 엑셀 다운로드</button><button class="btn sm" onclick="simUploadPage('wholesale_out')">⬆ 엑셀 업로드</button><button class="btn pr sm" onclick="om('mo-ws')">+ 출고 등록</button></div></div>
+  <div class="sts-row">
+    <div class="sts-c"><div class="sts-num" style="color:var(--in)" id="wo-cnt">2</div><div class="sts-lbl">출고건수</div></div>
+    <div class="sts-c"><div class="sts-num" id="wo-qty">0</div><div class="sts-lbl">총 출고수량</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--ac)" id="wo-amt">0</div><div class="sts-lbl">총 출고금액(원)</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--wa)" id="wo-pend">2</div><div class="sts-lbl">명세서 미발행</div></div>
+  </div>
+  <div class="tbl-box" style="margin-bottom:14px;">
+    <div class="tbl-bar">
+      <div class="srch"><svg width="12" height="12" viewBox="0 0 16 16" fill="#a0a09a"><path d="M11 6.5a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zm1.3 4.8l3.2 3.2-1.4 1.4-3.2-3.2a6 6 0 111.4-1.4z"/></svg><input type="text" placeholder="거래처명 / 바코드 / 모델 검색..." oninput="ft(this,'tb-wo')"></div>
+      <select class="sel"><option value="">전체 유형</option><option>거래명세서</option><option>수출 CI</option></select>
+      <select class="sel"><option value="">전체 상태</option><option>출고완료</option><option>명세서발행</option><option>대기</option></select>
+    </div>
+    <div class="tbl-scroll"><table id="tb-wo">
+      <thead><tr><th>출고일</th><th>유형</th><th>Partner ID</th><th>거래처명</th><th>바코드/모델</th><th>카테고리</th><th>스펙1</th><th>스펙2</th><th>통합스펙 (자동생성)</th><th class="r">수량</th><th class="r">단가</th><th class="r">합계</th><th>상태</th><th>명세서</th></tr></thead>
+      <tbody id="wo-body"></tbody>
+    </table></div>
+    <div class="tbl-ft"><span class="pg-info" id="wo-count">총 2건</span></div>
+  </div>
+
+  <!-- 거래명세서 발행 패널 -->
+  <div class="panel">
+    <div class="p-ttl" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>거래명세서 미리보기</span>
+      <div style="display:flex;gap:6px;">
+        <button class="btn sm" onclick="printInvoice()">🖨 인쇄</button>
+        <button class="btn sm dk" onclick="xlsxDownload('invoice')">⬇ 엑셀 저장</button>
+        <button class="btn pr sm" onclick="issueInvoice()">✓ 명세서 발행</button>
+      </div>
+    </div>
+    <div id="invoice-preview" style="margin-top:14px;border:0.5px solid var(--b2);border-radius:var(--rmd);overflow:hidden;">
+      <!-- 거래명세서 헤더 -->
+      <div style="background:var(--ac);color:white;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:600;">거 래 명 세 서</div>
+          <div style="font-size:11px;opacity:.85;margin-top:2px;">COMMERCIAL INVOICE</div>
+        </div>
+        <div style="text-align:right;font-size:11px;opacity:.9;">
+          <div>그리니시스템</div>
+          <div id="inv-date" style="margin-top:2px;">발행일: 2026-04-14</div>
+        </div>
+      </div>
+      <!-- 거래처 / 공급자 정보 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:0.5px solid var(--b1);">
+        <div style="padding:12px 16px;border-right:0.5px solid var(--b1);">
+          <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">수신 (거래처)</div>
+          <div style="font-size:13px;font-weight:500;" id="inv-to-name">투데이</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:2px;" id="inv-to-id">Partner ID: V0004</div>
+        </div>
+        <div style="padding:12px 16px;">
+          <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">공급자</div>
+          <div style="font-size:13px;font-weight:500;">그리니시스템</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:2px;">담당: 위세희</div>
+        </div>
+      </div>
+      <!-- 품목 테이블 -->
+      <div style="padding:0;">
+        <table id="inv-items" style="border-radius:0;">
+          <thead style="background:#faf9f7;">
+            <tr><th>No.</th><th>품목 / 통합스펙</th><th>카테고리</th><th class="r">수량</th><th class="r">단가</th><th class="r">금액</th></tr>
+          </thead>
+          <tbody id="inv-items-body">
+            <tr><td style="color:var(--t3)" colspan="6">출고 항목을 등록하면 자동으로 표시됩니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- 합계 -->
+      <div style="padding:12px 16px;border-top:0.5px solid var(--b1);display:flex;justify-content:flex-end;gap:24px;background:#faf9f7;">
+        <div style="font-size:12px;color:var(--t3);">공급가액</div>
+        <div style="font-size:14px;font-weight:600;min-width:100px;text-align:right;" id="inv-total-amt">0 원</div>
+      </div>
+      <div style="padding:8px 16px;background:var(--acl);font-size:11px;color:var(--acd);text-align:center;" id="inv-note">
+        위 금액을 청구합니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 재고현황 ══════════════ -->
+<div id="pg-inventory" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">재고 현황 (실시간)</div><div class="dsc">입고 - 출고 = 현재고 / 자동 계산</div></div><div class="sec-hd-r"><button class="btn sm dk" onclick="xlsxDownload('inventory')">⬇ 엑셀 다운로드</button></div></div>
+  <div class="sts-row">
+    <div class="sts-c"><div class="sts-num" style="color:var(--ac)" id="inv-total">1,022</div><div class="sts-lbl">현재 총재고</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--in)">1,563</div><div class="sts-lbl">누적 입고</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--er)">541</div><div class="sts-lbl">출고+불량</div></div>
+    <div class="sts-c"><div class="sts-num" style="color:var(--wa)">43</div><div class="sts-lbl">장기재고</div></div>
+  </div>
+
+  <div class="tbl-box" style="margin-bottom:14px;">
+    <div class="tbl-bar"><b style="font-size:12px;">수불 이력 (자동 계산)</b><span style="margin-left:auto;font-size:11px;color:var(--t3)">재고 = 전회 재고 + 입고 - 출고 - 불량</span></div>
+    <div class="tbl-scroll"><table id="tb-inv">
+      <thead><tr><th>날짜</th><th>업체명</th><th>구분</th><th>품목</th><th class="r">입고</th><th class="r">출고</th><th class="r">불량</th><th class="r">재고</th><th>입고수령인</th><th>출고자</th><th>비고</th></tr></thead>
+      <tbody id="inv-body"></tbody>
+    </table></div>
+  </div>
+
+  <!-- 카테고리별 재고 -->
+  <div class="panel">
+    <div class="p-ttl">카테고리별 재고 현황</div>
+    <table>
+      <thead><tr><th>카테고리</th><th>코드</th><th class="r">재고</th><th>재고 바</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td>LAPTOP (APPLE)</td><td><span class="cd">LP-GE-APL</span></td><td class="r">18</td><td><div class="prog-wrap"><div class="prog"><div class="prog-fill" style="width:72%"></div></div><span style="font-size:10px;color:var(--t3)">72%</span></div></td><td><span class="bd g">양호</span></td></tr>
+        <tr><td>LAPTOP (LENOVO)</td><td><span class="cd">LP-GE-LEN</span></td><td class="r">4</td><td><div class="prog-wrap"><div class="prog"><div class="prog-fill" style="width:16%"></div></div><span style="font-size:10px;color:var(--t3)">16%</span></div></td><td><span class="bd w">부족</span></td></tr>
+        <tr><td>HDD (PARTS)</td><td><span class="cd">PT-HD</span></td><td class="r">1,022</td><td><div class="prog-wrap"><div class="prog"><div class="prog-fill" style="width:90%"></div></div><span style="font-size:10px;color:var(--t3)">90%</span></div></td><td><span class="bd b">과잉</span></td></tr>
+        <tr><td>MONITOR</td><td><span class="cd">MN-GE</span></td><td class="r">0</td><td><div class="prog-wrap"><div class="prog"><div class="prog-fill danger" style="width:0%"></div></div><span style="font-size:10px;color:var(--er)">품절</span></div></td><td><span class="bd r">재고없음</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════ 소매 분석 ══════════════ -->
+<div id="pg-analysis" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">소매 분석</div><div class="dsc">KPI · 베스트 상품 · 마진 · 재고 분석</div></div></div>
+  <!-- KPI -->
+  <div class="kpi-grid" style="margin-bottom:16px;">
+    <div class="kc gr"><div class="lbl">총 매출</div><div class="val">1,719,000</div><div class="sub">원</div></div>
+    <div class="kc"><div class="lbl">총 마진</div><div class="val">1,719,000</div><div class="sub">매입가 미입력</div></div>
+    <div class="kc bl"><div class="lbl">평균 마진율</div><div class="val">—</div><div class="sub">총마진 / 총매출</div></div>
+    <div class="kc"><div class="lbl">총 판매수량</div><div class="val">12 ea</div></div>
+    <div class="kc wa"><div class="lbl">재고회전율</div><div class="val">—</div><div class="sub">판매수량 / 평균재고</div></div>
+    <div class="kc er"><div class="lbl">재고일수</div><div class="val">—</div><div class="sub">365 / 재고회전율</div></div>
+  </div>
+
+  <!-- 공식 설명 -->
+  <div class="panel" style="margin-bottom:14px;">
+    <div class="p-ttl">계산 로직 정의</div>
+    <div class="cpre">
+<span class="c">// ① 평균 마진율</span><br>
+<span class="k">avgMarginRate</span> = <span class="s">totalMargin</span> / <span class="s">totalSales</span> × 100<br><br>
+<span class="c">// ② 재고회전율 (Inventory Turnover)</span><br>
+<span class="k">turnover</span> = <span class="s">totalSalesQty</span> / <span class="s">avgInventory</span><br><br>
+<span class="c">// ③ 재고일수 (Days of Inventory)</span><br>
+<span class="k">daysOfInventory</span> = 365 / <span class="s">turnover</span><br><br>
+<span class="c">// ④ 죽은 재고 조건</span><br>
+<span class="k">isDeadStock</span> = stock &gt; 0 &amp;&amp; daysSinceLastSale &gt; 30
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="anl-c"><div class="anl-lbl">🏆 매출 TOP 상품</div>
+      <div class="anl-item"><div class="anl-nm">모니터 (10ea)</div><div class="anl-v">1,000,000</div></div>
+      <div class="anl-item"><div class="anl-nm">LG그램 15Z990</div><div class="anl-v">400,000</div></div>
+      <div class="anl-item"><div class="anl-nm">레노버 씽크북</div><div class="anl-v">319,000</div></div>
+    </div>
+    <div class="anl-c"><div class="anl-lbl">📦 수량 TOP 상품</div>
+      <div class="anl-item"><div class="anl-nm">모니터</div><div class="anl-v">10 ea</div></div>
+      <div class="anl-item"><div class="anl-nm">레노버 씽크북</div><div class="anl-v">1 ea</div></div>
+      <div class="anl-item"><div class="anl-nm">LG그램</div><div class="anl-v">1 ea</div></div>
+    </div>
+    <div class="anl-c"><div class="anl-lbl">💀 죽은 재고</div>
+      <div class="anl-item"><div class="anl-nm">MACBOOK 2020</div><div class="anl-v" style="color:var(--er)">2 ea / 30일↑</div></div>
+      <div class="anl-item"><div class="anl-nm">MAC MINI i3</div><div class="anl-v" style="color:var(--er)">2 ea / 30일↑</div></div>
+      <div class="anl-item"><div class="anl-nm">LENOVO X1 YOGA</div><div class="anl-v" style="color:var(--er)">1 ea / 30일↑</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 아이템코드 ══════════════ -->
+<div id="pg-itemcode" class="pg">
+  <div class="sec-hd"><div class="sec-hd-l"><div class="ttl">아이템 코드 생성 · 관리</div><div class="dsc">통합 코드 규칙: [Category]-[Sub]-[Brand]-[Model] | [PartnerID]-[yymmdd]-[스펙]-[위치]-[seq]</div></div></div>
+  <div class="g2">
+    <div class="panel">
+      <div class="p-ttl">통합 스펙 코드 생성기</div>
+      <div class="fgrid">
+        <div class="fg"><label class="fl">Partner ID</label><select class="fsl" id="ic-pid" onchange="uic()"><option value="V0006">V0006 (경인R&S)</option><option value="V0004">V0004 (투데이)</option><option value="V0003">V0003 (선봉솔루션)</option><option value="V0007">V0007 (루나텍)</option></select></div>
+        <div class="fg"><label class="fl">입고일 (yymmdd)</label><input class="fi" id="ic-dt" value="260403" oninput="uic()"></div>
+        <div class="fg"><label class="fl">Category Code</label><select class="fsl" id="ic-cat" onchange="uic()"><option value="PT-HD">PT-HD (HDD)</option><option value="PT-SD">PT-SD (SSD)</option><option value="LP-GE">LP-GE (LAPTOP)</option><option value="DT-MT">DT-MT (DESKTOP)</option></select></div>
+        <div class="fg"><label class="fl">Brand Short</label><select class="fsl" id="ic-br" onchange="uic()"><option value="HTC">HTC (HITACHI)</option><option value="WDC">WDC</option><option value="SGT">SGT (SEAGATE)</option><option value="SS">SS (SAMSUNG)</option></select></div>
+        <div class="fg"><label class="fl">스펙 (용량/모델)</label><input class="fi" id="ic-sp" value="1TB-3.5-SATA" oninput="uic()"></div>
+        <div class="fg"><label class="fl">위치 ID</label><input class="fi" id="ic-loc" value="B-라-1" oninput="uic()"></div>
+      </div>
+      <div class="cpre" style="margin-top:12px;">
+        <span class="c">// 아이템 코드 (단품)</span><br>
+        <span class="k">ItemCode</span> = "<span class="s" id="ic-r1">PT-HD-HTC-1TB-3.5-SATA</span>"<br><br>
+        <span class="c">// 통합 스펙 코드 (수거)</span><br>
+        <span class="k">IntegratedSpec</span> = "<span class="s" id="ic-r2">V0006-260403-PT-HD-HTC-1TB-3.5-SATA-B-라-1-0001</span>"
+      </div>
+      <div style="margin-top:10px;text-align:right;display:flex;gap:6px;justify-content:flex-end;">
+        <button class="btn sm" onclick="toast('아이템코드 복사됨')">코드 복사</button>
+        <button class="btn pr sm" onclick="toast('코드 등록 완료')">DB 등록</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="p-ttl">코드 체계 가이드</div>
+      <table><thead><tr><th>구분</th><th>형식</th><th>예시</th></tr></thead>
+      <tbody>
+        <tr><td>Partner ID</td><td>V/C/D + 4자리</td><td><span class="cd">V0006</span></td></tr>
+        <tr><td>수거일련번호</td><td>PartnerID+yymmdd+000</td><td><span class="cd">V0006260320001</span></td></tr>
+        <tr><td>Item Code</td><td>Cat-Sub-Brand-Model</td><td><span class="cd">DT-MT-SS-DB400</span></td></tr>
+        <tr><td>통합스펙코드</td><td>PID-날짜-Cat-Brand-스펙-위치-seq</td><td><span class="cd" style="font-size:10px;">V0006-260320-PT-HD-HTC-1TB-B라1-0001</span></td></tr>
+        <tr><td>Category Code</td><td>MainShort-SubShort</td><td><span class="cd">DT-MT / LP-GE / PT-HD</span></td></tr>
+      </tbody></table>
+      <div style="margin-top:14px;padding:10px;background:var(--acl);border-radius:var(--rmd);">
+        <div style="font-size:11px;font-weight:600;color:var(--acd);margin-bottom:4px;">코드 생성 원칙</div>
+        <div style="font-size:11px;color:var(--acd);line-height:1.7;">① Category 마스터 기반 자동 조합<br>② 동일 모델 중복 코드 방지 (Seq 자동 증가)<br>③ AI 정제 완료 후 최종 확정<br>④ 한 번 발행된 코드는 수정 불가 (이력 보존)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </div><!-- /ct -->
+</div><!-- /mn -->
+
+<!-- ───── MODALS ───── -->
+<!-- 카테고리 추가 -->
+<div class="mo" id="mo-cat"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">카테고리 추가</div><button class="btn sm" onclick="cm('mo-cat')">✕</button></div>
+  <div class="mo-bd"><div class="fgrid">
+    <div class="fg"><label class="fl">Main Category</label><select class="fsl"><option>DESKTOP</option><option>LAPTOP</option><option>PARTS</option><option>SERVER</option><option>SMARTPHONE</option><option>MONITOR</option></select></div>
+    <div class="fg"><label class="fl">Sub Category</label><input class="fi" placeholder="예: MT, GE, HD"></div>
+    <div class="fg"><label class="fl">Main Short Code</label><input class="fi" placeholder="예: DT, LP, PT"></div>
+    <div class="fg"><label class="fl">Sub Short Code</label><input class="fi" placeholder="예: MT, GE, HD"></div>
+    <div class="fg full"><label class="fl">설명</label><input class="fi" placeholder="카테고리 설명 (한글)"></div>
+  </div>
+  <div class="cpre" style="margin-top:10px;"><span class="c">// Integrated Category Code = MainShort + "-" + SubShort</span></div></div></div>
+  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-cat')">취소</button><button class="btn pr sm" onclick="cm('mo-cat');toast('카테고리가 추가되었습니다')">저장</button></div>
+</div></div>
+
+<!-- 브랜드 추가 -->
+<div class="mo" id="mo-brand"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">브랜드 추가</div><button class="btn sm" onclick="cm('mo-brand')">✕</button></div>
+  <div class="mo-bd"><div class="fgrid">
+    <div class="fg"><label class="fl">브랜드명 (영문)</label><input class="fi" placeholder="예: SAMSUNG"></div>
+    <div class="fg"><label class="fl">Brand Short (3자 이내)</label><input class="fi" placeholder="예: SS, APL, LEN"></div>
+  </div></div></div>
+  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-brand')">취소</button><button class="btn pr sm" onclick="cm('mo-brand');toast('브랜드가 추가되었습니다')">저장</button></div>
+</div></div>
+
+<!-- 파트너 추가 -->
+<div class="mo" id="mo-partner"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">파트너 추가</div><button class="btn sm" onclick="cm('mo-partner')">✕</button></div>
+  <div class="mo-bd"><div class="fgrid">
+    <div class="fg full"><label class="fl">파트너명 (사업자등록증 표기명)</label><input class="fi" placeholder="주식회사 생략"></div>
+    <div class="fg"><label class="fl">약칭 (영문 대문자)</label><input class="fi" placeholder="예: KRS, TOD"></div>
+    <div class="fg"><label class="fl">구분</label><select class="fsl"><option>Vendor</option><option>Customer</option><option>Dual</option></select></div>
+  </div>
+  <div class="cpre" style="margin-top:10px;"><span class="c">// Partner ID 자동 생성: V/C/D + 4자리 일련번호</span><br><span class="k">PartnerID</span> = "<span class="s">V1401</span>" <span class="c">// 다음 번호 자동 부여</span></div></div></div>
+  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-partner')">취소</button><button class="btn pr sm" onclick="cm('mo-partner');toast('파트너가 등록되었습니다 (ID: V1401)')">저장 및 ID 발행</button></div>
+</div></div>
+
+<!-- 상품 등록 -->
+<div class="mo" id="mo-prod"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">상품 기본정보 등록 (MDM)</div><button class="btn sm" onclick="cm('mo-prod')">✕</button></div>
+  <div class="mo-bd"><div class="fgrid">
+    <div class="fg"><label class="fl">Integrated Category</label><select class="fsl"><option>DT-MT</option><option>LP-GE</option><option>PT-HD</option><option>PT-SD</option><option>PT-CP</option><option>MN-GE</option></select></div>
+    <div class="fg"><label class="fl">Brand</label><select class="fsl"><option>SAMSUNG (SS)</option><option>LG</option><option>APPLE (APL)</option><option>LENOVO (LEN)</option><option>HITACHI (HTC)</option></select></div>
+    <div class="fg full"><label class="fl">모델명 (바코드스캔)</label><input class="fi" placeholder="바코드 스캔 또는 직접 입력"></div>
+    <div class="fg"><label class="fl">스펙 1 (용량/CPU)</label><input class="fi" placeholder="예: 1TB, i5-10세대"></div>
+    <div class="fg"><label class="fl">스펙 2 (규격/RAM)</label><input class="fi" placeholder="예: 3.5&quot; SATA, 8G"></div>
+    <div class="fg"><label class="fl">스펙 3 (추가 정보)</label><input class="fi" placeholder="예: SSD 256G"></div>
+    <div class="fg"><label class="fl">위치 ID</label><input class="fi" placeholder="예: B-라-1"></div>
+    <div class="fg"><label class="fl">품질 등급</label><select class="fsl"><option>양품</option><option>A등급</option><option>B등급</option><option>불량</option></select></div>
+    <div class="fg full"><label class="fl">통합 스펙 (AI 정제 결과 / 최대 30자)</label><input class="fi" placeholder="AI 정제 완료 시 자동 기입"></div>
+  </div></div></div>
+  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-prod')">취소</button><button class="btn pr sm" onclick="cm('mo-prod');toast('상품이 등록되고 아이템코드가 발행되었습니다')">등록 + 코드 발행</button></div>
+</div></div>
+
+<!-- ══ 소매 입고 등록 모달 (도매입고와 동일 구조 + 통합스펙 자동생성) ══ -->
+<div class="mo" id="mo-intake-retail"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">소매 입고 등록</div><button class="btn sm" onclick="cm('mo-intake-retail')">✕</button></div>
+  <div class="mo-bd">
+    <div class="fgrid">
+      <div class="fg"><label class="fl">입고일</label><input class="fi" type="date" id="ir-date" value="2026-04-16" oninput="genIRetailSpec()"></div>
+      <div class="fg"><label class="fl">Partner ID</label>
+        <select class="fsl" id="ir-pid" onchange="genIRetailSpec()">
+          <option value="V0827">V0827 (카카오모빌리티)</option>
+          <option value="V0001">V0001 (네이버)</option>
+          <option value="V0004">V0004 (투데이)</option>
+          <option value="V0006">V0006 (경인R&S)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">카테고리</label>
+        <select class="fsl" id="ir-cat" onchange="genIRetailSpec()">
+          <option value="LP-GE">LP-GE (LAPTOP)</option>
+          <option value="DT-MT">DT-MT (DESKTOP)</option>
+          <option value="DT-ST">DT-ST (DESKTOP 슬림)</option>
+          <option value="MN-GE">MN-GE (MONITOR)</option>
+          <option value="PT-HD">PT-HD (HDD)</option>
+          <option value="PT-SD">PT-SD (SSD)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">브랜드</label>
+        <select class="fsl" id="ir-brand" onchange="genIRetailSpec()">
+          <option value="APL">APPLE (APL)</option>
+          <option value="LEN">LENOVO (LEN)</option>
+          <option value="SS">SAMSUNG (SS)</option>
+          <option value="LG">LG</option>
+          <option value="DEL">DELL (DEL)</option>
+          <option value="HP">HP</option>
+          <option value="ETC">기타 (ETC)</option>
+        </select>
+      </div>
+      <div class="fg full"><label class="fl">바코드 / 모델명</label>
+        <input class="fi" id="ir-barcode" placeholder="바코드 스캔 또는 모델명 직접 입력" oninput="genIRetailSpec()">
+      </div>
+      <div class="fg"><label class="fl">스펙1 (CPU / 용량)</label>
+        <input class="fi" id="ir-spec1" placeholder="예: i5-10세대 / M4 PRO / 16G" oninput="genIRetailSpec()">
+      </div>
+      <div class="fg"><label class="fl">스펙2 (RAM / 저장장치)</label>
+        <input class="fi" id="ir-spec2" placeholder="예: 8G SSD256G / 3.5&quot; SATA" oninput="genIRetailSpec()">
+      </div>
+      <div class="fg"><label class="fl">위치 ID</label>
+        <input class="fi" id="ir-loc" placeholder="예: A-가-1 / 소매동" oninput="genIRetailSpec()">
+      </div>
+      <div class="fg"><label class="fl">수량</label>
+        <input class="fi" id="ir-qty" type="number" value="1" min="1">
+      </div>
+      <div class="fg"><label class="fl">품질등급</label>
+        <select class="fsl" id="ir-grade">
+          <option>양품</option><option>A등급</option><option>B등급</option><option>불량</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <div style="font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px;">통합스펙 (자동생성)</div>
+      <div style="background:#1c1c1a;border-radius:var(--rmd);padding:10px 14px;font-family:monospace;font-size:11.5px;color:#9fe1cb;word-break:break-all;" id="ir-ispec-preview">입력 항목을 채우면 자동 생성됩니다</div>
+    </div>
+    <div style="margin-top:10px;padding:8px 10px;background:var(--acl);border-radius:var(--rmd);font-size:11px;color:var(--acd);">
+      ✅ 입고 확정 시 재고 즉시 반영 · 수불이력 자동 기록
+    </div>
+  </div>
+  <div class="mo-ft">
+    <button class="btn sm" onclick="cm('mo-intake-retail')">취소</button>
+    <button class="btn pr sm" onclick="submitIntakeRetail()">입고 확정</button>
+  </div>
+</div></div></div>
+
+<!-- 입고 등록 (공통 구버전, 하위호환용) -->
+  <div class="mo-hd"><div class="mo-ttl">입고 등록</div><button class="btn sm" onclick="cm('mo-intake')">✕</button></div>
+  <div class="mo-bd"><div class="fgrid">
+    <div class="fg"><label class="fl">입고 유형</label><select class="fsl"><option>소매 입고</option><option>도매 입고</option></select></div>
+    <div class="fg"><label class="fl">입고일</label><input class="fi" type="date" value="2026-04-14"></div>
+    <div class="fg"><label class="fl">Partner ID</label><select class="fsl"><option>V0006 (경인R&S)</option><option>V0004 (투데이)</option><option>V0003 (선봉솔루션)</option></select></div>
+    <div class="fg"><label class="fl">카테고리</label><select class="fsl"><option>PT-HD (HDD)</option><option>LP-GE (LAPTOP)</option><option>DT-MT (DESKTOP)</option></select></div>
+    <div class="fg"><label class="fl">브랜드</label><select class="fsl"><option>HITACHI (HTC)</option><option>APPLE (APL)</option><option>SAMSUNG (SS)</option></select></div>
+    <div class="fg"><label class="fl">수량</label><input class="fi" type="number" placeholder="0"></div>
+    <div class="fg full"><label class="fl">모델 (바코드스캔)</label><input class="fi" placeholder="스캔 또는 직접 입력"></div>
+    <div class="fg"><label class="fl">품질등급</label><select class="fsl"><option>양품입고</option><option>불량반품</option><option>불량스크랩</option></select></div>
+    <div class="fg"><label class="fl">위치 ID</label><input class="fi" placeholder="예: B-라-1"></div>
+  </div>
+  <div style="margin-top:10px;padding:8px 10px;background:var(--acl);border-radius:var(--rmd);font-size:11px;color:var(--acd);">
+    ✅ 입고 등록 시 재고 수량 자동 반영 · 수불대장 이력 자동 생성
+  </div></div>
+  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-intake')">취소</button><button class="btn pr sm" onclick="cm('mo-intake');toast('입고 등록 완료 → 재고 반영됨')">입고 확정</button></div>
+</div></div>
+
+<!-- ══ 소매 거래 등록 모달 (통합스펙 자동생성 포함) ══ -->
+<div class="mo" id="mo-retail"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">소매 거래 등록</div><button class="btn sm" onclick="cm('mo-retail')">✕</button></div>
+  <div class="mo-bd">
+    <div class="fgrid">
+      <div class="fg"><label class="fl">거래일</label><input class="fi" type="date" id="rt-date" value="2026-04-16" oninput="genRetailSpec()"></div>
+      <div class="fg"><label class="fl">판매채널</label>
+        <select class="fsl" id="rt-ch">
+          <option>직판 (오프라인)</option><option>스마트스토어</option><option>옥션</option>
+          <option>쿠팡</option><option>G마켓</option><option>11번가</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">종류</label>
+        <select class="fsl" id="rt-type">
+          <option>노트북</option><option>데스크탑</option><option>모니터</option>
+          <option>스마트폰</option><option>HDD</option><option>SSD</option><option>기타 부품</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">카테고리</label>
+        <select class="fsl" id="rt-cat" onchange="genRetailSpec()">
+          <option value="LP-GE">LP-GE (LAPTOP)</option><option value="DT-MT">DT-MT (DESKTOP)</option>
+          <option value="MN-GE">MN-GE (MONITOR)</option><option value="PT-HD">PT-HD (HDD)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">브랜드</label>
+        <select class="fsl" id="rt-brand" onchange="genRetailSpec()">
+          <option value="APL">APPLE (APL)</option><option value="LEN">LENOVO (LEN)</option>
+          <option value="SS">SAMSUNG (SS)</option><option value="LG">LG</option><option value="ETC">기타 (ETC)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Partner ID (소싱처)</label>
+        <select class="fsl" id="rt-pid" onchange="genRetailSpec()">
+          <option value="V0827">V0827 (카카오모빌리티)</option><option value="V0001">V0001 (네이버)</option>
+          <option value="V0006">V0006 (경인R&S)</option>
+        </select>
+      </div>
+      <div class="fg full"><label class="fl">바코드 / 모델명</label>
+        <input class="fi" id="rt-barcode" placeholder="바코드 스캔 또는 모델명 직접 입력" oninput="genRetailSpec()">
+      </div>
+      <div class="fg"><label class="fl">스펙1 (CPU / 용량)</label>
+        <input class="fi" id="rt-spec1" placeholder="예: i5-10세대 / M4 PRO" oninput="genRetailSpec()">
+      </div>
+      <div class="fg"><label class="fl">스펙2 (RAM / 저장장치)</label>
+        <input class="fi" id="rt-spec2" placeholder="예: 8G SSD256G" oninput="genRetailSpec()">
+      </div>
+      <div class="fg"><label class="fl">출고수량</label><input class="fi" id="rt-qty" type="number" value="1"></div>
+      <div class="fg"><label class="fl">판매단가 (원)</label><input class="fi" id="rt-price" type="number" placeholder="0"></div>
+      <div class="fg"><label class="fl">매입단가 (원, 마진용)</label><input class="fi" id="rt-cost" type="number" placeholder="0"></div>
+      <div class="fg"><label class="fl">고객명</label><input class="fi" id="rt-cust" placeholder="고객명"></div>
+      <div class="fg"><label class="fl">송장번호</label><input class="fi" id="rt-invoice" placeholder="출고 후 기입"></div>
+    </div>
+    <div style="margin-top:12px;">
+      <div style="font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px;">통합스펙 (자동생성)</div>
+      <div style="background:#1c1c1a;border-radius:var(--rmd);padding:10px 14px;font-family:monospace;font-size:11.5px;color:#9fe1cb;word-break:break-all;" id="rt-ispec-preview">입력 항목을 채우면 자동 생성됩니다</div>
+    </div>
+    <div style="margin-top:10px;padding:8px 10px;background:var(--acl);border-radius:var(--rmd);font-size:11px;color:var(--acd);">
+      ✅ 출고 확정 시 재고 자동 차감 · KPI 즉시 재계산
+    </div>
+  </div>
+  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-retail')">취소</button><button class="btn pr sm" onclick="submitRetail()">출고 확정</button></div>
+</div></div></div>
+
+<!-- ══ 도매 출고 등록 모달 (도매입고와 동일 구조 + 통합스펙 자동생성) ══ -->
+<div class="mo" id="mo-ws"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">도매 출고 등록</div><button class="btn sm" onclick="cm('mo-ws')">✕</button></div>
+  <div class="mo-bd">
+    <div class="fgrid">
+      <div class="fg"><label class="fl">출고일</label><input class="fi" type="date" id="wo-date" value="2026-04-16" oninput="genWholesaleSpec()"></div>
+      <div class="fg"><label class="fl">출고 유형</label>
+        <select class="fsl" id="wo-type">
+          <option>거래명세서</option><option>수출 CI</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">거래처 (Partner ID)</label>
+        <select class="fsl" id="wo-pid" onchange="genWholesaleSpec()">
+          <option value="V0004">V0004 (투데이)</option><option value="V0008">V0008 (시멜리아)</option>
+          <option value="V0003">V0003 (선봉솔루션)</option><option value="V0007">V0007 (루나텍)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">카테고리</label>
+        <select class="fsl" id="wo-cat" onchange="genWholesaleSpec()">
+          <option value="PT-HD">PT-HD (HDD)</option><option value="PT-SD">PT-SD (SSD)</option>
+          <option value="PT-RM">PT-RM (RAM)</option><option value="LP-GE">LP-GE (LAPTOP)</option>
+        </select>
+      </div>
+      <div class="fg full"><label class="fl">바코드 / 모델명</label>
+        <input class="fi" id="wo-barcode" placeholder="바코드 스캔 또는 모델명 직접 입력" oninput="genWholesaleSpec()">
+      </div>
+      <div class="fg"><label class="fl">스펙1 (용량 / CPU)</label>
+        <input class="fi" id="wo-spec1" placeholder="예: 1TB / 500GB / i5-10세대" oninput="genWholesaleSpec()">
+      </div>
+      <div class="fg"><label class="fl">스펙2 (규격 / 인터페이스)</label>
+        <input class="fi" id="wo-spec2" placeholder='예: 3.5" SATA / 2.5" SAS' oninput="genWholesaleSpec()">
+      </div>
+      <div class="fg"><label class="fl">출고 수량</label><input class="fi" id="wo-qty" type="number" value="1" min="1"></div>
+      <div class="fg"><label class="fl">단가 (원)</label><input class="fi" id="wo-price" type="number" placeholder="0"></div>
+    </div>
+    <div style="margin-top:12px;">
+      <div style="font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px;">통합스펙 (자동생성)</div>
+      <div style="background:#1c1c1a;border-radius:var(--rmd);padding:10px 14px;font-family:monospace;font-size:11.5px;color:#9fe1cb;word-break:break-all;" id="wo-ispec-preview">입력 항목을 채우면 자동 생성됩니다</div>
+    </div>
+    <div style="margin-top:10px;padding:8px 10px;background:var(--inl);border-radius:var(--rmd);font-size:11px;color:var(--in);">
+      ✅ 출고 확정 후 거래명세서 미리보기에 자동 반영됩니다
+    </div>
+  </div>
+  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-ws')">취소</button><button class="btn pr sm" onclick="submitWholesaleOut()">출고 확정</button></div>
+</div></div></div>
+
+<div id="toast"></div>
+
+<script>
+// ─── DATA ───
+const DB = {
+  categories: [
+    {id:'CG0001',main:'DESKTOP',sub:'MT',code:'DT-MT',ms:'DT',ss:'MT',desc:'데스크탑 미들타워'},
+    {id:'CG0002',main:'DESKTOP',sub:'ST',code:'DT-ST',ms:'DT',ss:'ST',desc:'데스크탑 슬림형'},
+    {id:'CG0003',main:'DESKTOP',sub:'ALL',code:'DT-AL',ms:'DT',ss:'AL',desc:'데스크탑 일체형'},
+    {id:'CG0004',main:'LAPTOP',sub:'GENERAL',code:'LP-GE',ms:'LP',ss:'GE',desc:'일반형 노트북'},
+    {id:'CG0005',main:'TABLET',sub:'GENERAL',code:'TB-GE',ms:'TB',ss:'GE',desc:'태블릿 PC'},
+    {id:'CG0006',main:'SMARTPHONE',sub:'BASIC',code:'SP-BS',ms:'SP',ss:'BS',desc:'스마트폰 일반형'},
+    {id:'CG0007',main:'SMARTPHONE',sub:'FLIP',code:'SP-FP',ms:'SP',ss:'FP',desc:'스마트폰 플립형'},
+    {id:'CG0008',main:'SMARTPHONE',sub:'FOLDER',code:'SP-FD',ms:'SP',ss:'FD',desc:'스마트폰 폴더블'},
+    {id:'CG0009',main:'SERVER',sub:'HP 1U',code:'SV-H1',ms:'SV',ss:'H1',desc:'HP 서버 1U'},
+    {id:'CG0010',main:'SERVER',sub:'HP 2U',code:'SV-H2',ms:'SV',ss:'H2',desc:'HP 서버 2U'},
+    {id:'CG0011',main:'SERVER',sub:'DELL 1U',code:'SV-D1',ms:'SV',ss:'D1',desc:'DELL 서버 1U'},
+    {id:'CG0012',main:'SERVER',sub:'DELL 2U',code:'SV-D2',ms:'SV',ss:'D2',desc:'DELL 서버 2U'},
+    {id:'CG0013',main:'PARTS',sub:'CPU',code:'PT-CP',ms:'PT',ss:'CP',desc:'CPU 반도체'},
+    {id:'CG0014',main:'PARTS',sub:'RAM(pc)',code:'PT-RM',ms:'PT',ss:'RM',desc:'RAM 메모리 PC용'},
+    {id:'CG0015',main:'PARTS',sub:'RAM(SERVER)',code:'PT-RM',ms:'PT',ss:'RM',desc:'RAM 메모리 서버용'},
+    {id:'CG0016',main:'PARTS',sub:'RAM(LAPTOP)',code:'PT-RM',ms:'PT',ss:'RM',desc:'RAM 메모리 노트북용'},
+    {id:'CG0017',main:'PARTS',sub:'VGA(NVIDIA)',code:'PT-VG',ms:'PT',ss:'VG',desc:'VGA NVIDIA'},
+    {id:'CG0018',main:'PARTS',sub:'VGA(AMD)',code:'PT-VG',ms:'PT',ss:'VG',desc:'VGA AMD'},
+    {id:'CG0019',main:'PARTS',sub:'HDD',code:'PT-HD',ms:'PT',ss:'HD',desc:'HDD 저장장치'},
+    {id:'CG0020',main:'PARTS',sub:'SSD',code:'PT-SD',ms:'PT',ss:'SD',desc:'SSD 저장장치'},
+    {id:'CG0021',main:'MONITOR',sub:'GENERAL',code:'MN-GE',ms:'MN',ss:'GE',desc:'모니터 일반'},
+    {id:'CG0022',main:'MAINBOARD',sub:'MAINBOARD',code:'MB-MB',ms:'MB',ss:'MB',desc:'메인보드'},
+    {id:'CG0023',main:'POEWR',sub:'ADAPTER',code:'PW-AP',ms:'PW',ss:'AP',desc:'전원 어댑터'},
+    {id:'CG0024',main:'POEWR',sub:'POWER SUPPLY',code:'PW-PS',ms:'PW',ss:'PS',desc:'파워서플라이'},
+    {id:'CG0025',main:'ACCESSORY',sub:'ETC',code:'AC-EC',ms:'AC',ss:'EC',desc:'액세서리'},
+    {id:'CG0026',main:'CLEANING',sub:'CLEANER',code:'CN-CN',ms:'CN',ss:'CN',desc:'클리닝용품'},
+  ],
+  brands: [
+    {name:'SAMSUNG',short:'SS'},{name:'LG',short:'LG'},{name:'DELL',short:'DEL'},{name:'HP',short:'HP'},
+    {name:'APPLE',short:'APL'},{name:'LENOVO',short:'LEN'},{name:'MICRON',short:'MIC'},{name:'INTEL',short:'ITL'},
+    {name:'HITACHI',short:'HTC'},{name:'HYNIX',short:'HNX'},{name:'SEAGATE',short:'SGT'},{name:'TOSHIBA',short:'TSB'},
+    {name:'WESTERN DIGITAL',short:'WDC'},{name:'NVIDIA',short:'NVD'},{name:'AMD',short:'AMD'},{name:'ASUS',short:'ASU'},
+    {name:'ACER',short:'ACE'},{name:'BenQ',short:'BNQ'},{name:'Philips',short:'PHI'},{name:'GIGABYTE',short:'GB'},
+    {name:'MSI',short:'MSI'},{name:'ASROCK',short:'AR'},{name:'KINGSTON',short:'KST'},{name:'TRANSCEND',short:'TRN'},
+    {name:'NANYA',short:'NAN'},{name:'ELPIDA',short:'ELP'},{name:'RAMAXEL',short:'RML'},{name:'SMART',short:'SMT'},
+    {name:'VIRTIUM',short:'VIR'},{name:'ATP',short:'ATP'},{name:'TAMMUZ',short:'TMZ'},{name:'Alphascan',short:'ALP'},
+    {name:'TG',short:'TG'},{name:'UNKNOWN',short:'ETC'},{name:'ETC',short:'ETC'},{name:'MICRON',short:'MCR'},
+    {name:'HP',short:'HP'},{name:'DELL',short:'DEL'},
+  ],
+  partners: [
+    {id:'V0001',name:'네이버',abbr:'NV',type:'Vendor',date:'2026-03-04'},
+    {id:'V0002',name:'현대하이카',abbr:'HIC',type:'Vendor',date:'2026-03-04'},
+    {id:'V0003',name:'선봉솔루션',abbr:'SBS',type:'Vendor',date:'2026-03-04'},
+    {id:'V0004',name:'투데이',abbr:'TOD',type:'Vendor',date:'2026-03-04'},
+    {id:'V0005',name:'비전컴퍼니',abbr:'VCO',type:'Vendor',date:'2026-03-04'},
+    {id:'V0006',name:'경인R&S',abbr:'KRS',type:'Vendor',date:'2026-03-04'},
+    {id:'V0007',name:'루나텍',abbr:'LNT',type:'Vendor',date:'2026-03-04'},
+    {id:'V0008',name:'시멜리아',abbr:'—',type:'Vendor',date:'2026-03-04'},
+    {id:'C0001',name:'소매',abbr:'—',type:'Customer',date:'2026-03-04'},
+    {id:'V0009',name:'LGCNS',abbr:'CNS',type:'Vendor',date:'2026-03-04'},
+    {id:'V0010',name:'ABL생명',abbr:'ABLS',type:'Vendor',date:'2026-03-04'},
+    {id:'V0827',name:'카카오모빌리티',abbr:'KMB',type:'Vendor',date:'2026-03-04'},
+  ],
+  products: [
+    {code:'LP-GE-APL-MB2024',cat:'LP-GE',brand:'APPLE',model:'MACBOOK 2024-M4 PRO 16 INCH-48G-512G',spec:'M4 PRO 16" 48G 512G',grade:'양품',stock:1},
+    {code:'LP-GE-APL-MB2023',cat:'LP-GE',brand:'APPLE',model:'MACBOOK 2023-M2 PRO 16 INCH-32G-512G',spec:'M2 PRO 16" 32G 512G',grade:'양품',stock:4},
+    {code:'LP-GE-APL-MB2022',cat:'LP-GE',brand:'APPLE',model:'MACBOOK 2022-M2 13 INCH-16G-512G',spec:'M2 13" 16G 512G',grade:'양품',stock:8},
+    {code:'LP-GE-APL-MB2021',cat:'LP-GE',brand:'APPLE',model:'MACBOOK 2021-M1 PRO 16 INCH-32G-512G',spec:'M1 PRO 16" 32G 512G',grade:'양품',stock:3},
+    {code:'LP-GE-APL-MB2020',cat:'LP-GE',brand:'APPLE',model:'MACBOOK 2020-M1 13 INCH-16G-512G',spec:'M1 13" 16G 512G',grade:'양품',stock:2},
+    {code:'LP-GE-APL-MMINI',cat:'LP-GE',brand:'APPLE',model:'MAC MINI-i3-8100B-8G-128G',spec:'i3-8100B 8G 128G',grade:'B등급',stock:2},
+    {code:'LP-GE-LEN-L390B',cat:'LP-GE',brand:'LENOVO',model:'LENOVO L390-i7-8565U(B)-8G-240G',spec:'i7-8565U 8G 240G',grade:'B등급',stock:1},
+    {code:'LP-GE-LEN-L390A',cat:'LP-GE',brand:'LENOVO',model:'LENOVO L390-i7-8565U(A)-8G-256G',spec:'i7-8565U 8G 256G',grade:'A등급',stock:1},
+    {code:'LP-GE-LEN-X1YGA',cat:'LP-GE',brand:'LENOVO',model:'LENOVO X1 YOGA-i5-8350U(B)-16G-128G',spec:'i5-8350U 16G 128G',grade:'B등급',stock:1},
+    {code:'LP-GE-LEN-NT950',cat:'LP-GE',brand:'LENOVO',model:'NT950XCR-i5-10210U(B)-24G-256G',spec:'i5-10210U 24G 256G',grade:'B등급',stock:1},
+    {code:'PT-HD-0001',cat:'PT-HD',brand:'—',model:'HDD 500GB 3.5" SATA',spec:'500GB 3.5" SATA',grade:'양품',stock:432},
+    {code:'PT-HD-0002',cat:'PT-HD',brand:'—',model:'HDD 1TB 3.5" SATA',spec:'1TB 3.5" SATA',grade:'양품',stock:590},
+  ],
+  intake_retail: [
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'MACBOOK2024-001',cat:'LP-GE',brand:'APL',model:'MACBOOK 2024',spec1:'M4 PRO 16"',spec2:'48G 512G',loc:'소매동-A1',qty:1,grade:'양품',code:'LP-GE-APL-MB2024',ispec:'V0827-260320-LP-GE-APL-M4PRO-48G512G-소매동A1-0001',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'MACBOOK2023-001',cat:'LP-GE',brand:'APL',model:'MACBOOK 2023',spec1:'M2 PRO 16"',spec2:'32G 512G',loc:'소매동-A1',qty:4,grade:'양품',code:'LP-GE-APL-MB2023',ispec:'V0827-260320-LP-GE-APL-M2PRO-32G512G-소매동A1-0002',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'MACBOOK2022-001',cat:'LP-GE',brand:'APL',model:'MACBOOK 2022',spec1:'M2 13"',spec2:'16G 512G',loc:'소매동-A2',qty:8,grade:'양품',code:'LP-GE-APL-MB2022',ispec:'V0827-260320-LP-GE-APL-M2-16G512G-소매동A2-0003',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'MACBOOK2021-001',cat:'LP-GE',brand:'APL',model:'MACBOOK 2021',spec1:'M1 PRO 16"',spec2:'32G 512G',loc:'소매동-A2',qty:3,grade:'양품',code:'LP-GE-APL-MB2021',ispec:'V0827-260320-LP-GE-APL-M1PRO-32G512G-소매동A2-0004',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'MACBOOK2020-001',cat:'LP-GE',brand:'APL',model:'MACBOOK 2020',spec1:'M1 13"',spec2:'16G 512G',loc:'소매동-B1',qty:2,grade:'양품',code:'LP-GE-APL-MB2020',ispec:'V0827-260320-LP-GE-APL-M1-16G512G-소매동B1-0005',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'MACMINI-001',cat:'LP-GE',brand:'APL',model:'MAC MINI',spec1:'i3-8100B',spec2:'8G 128G',loc:'소매동-B1',qty:2,grade:'B등급',code:'LP-GE-APL-MMINI',ispec:'V0827-260320-LP-GE-APL-i3-8G128G-소매동B1-0006',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'L390B-001',cat:'LP-GE',brand:'LEN',model:'LENOVO L390',spec1:'i7-8565U(B)',spec2:'8G 240G',loc:'소매동-B2',qty:1,grade:'B등급',code:'LP-GE-LEN-L390B',ispec:'V0827-260320-LP-GE-LEN-i7-8G240G-소매동B2-0007',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'L390A-001',cat:'LP-GE',brand:'LEN',model:'LENOVO L390',spec1:'i7-8565U(A)',spec2:'8G 256G',loc:'소매동-B2',qty:1,grade:'A등급',code:'LP-GE-LEN-L390A',ispec:'V0827-260320-LP-GE-LEN-i7-8G256G-소매동B2-0008',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'X1YOGA-001',cat:'LP-GE',brand:'LEN',model:'LENOVO X1 YOGA',spec1:'i5-8350U(B)',spec2:'16G 128G',loc:'소매동-C1',qty:1,grade:'B등급',code:'LP-GE-LEN-X1YGA',ispec:'V0827-260320-LP-GE-LEN-i5-16G128G-소매동C1-0009',status:'완료'},
+    {date:'2026-03-20',pid:'V0827',pname:'카카오모빌리티',barcode:'NT950-001',cat:'LP-GE',brand:'LEN',model:'NT950XCR',spec1:'i5-10210U(B)',spec2:'24G 256G',loc:'소매동-C1',qty:1,grade:'B등급',code:'LP-GE-LEN-NT950',ispec:'V0827-260320-LP-GE-LEN-i5-24G256G-소매동C1-0010',status:'완료'},
+  ],
+  wholesale_out: [
+    {date:'2026-04-13',type:'거래명세서',pid:'V0004',pname:'투데이',barcode:'TOD-OUT-0001',cat:'PT-HD',spec1:'1TB',spec2:'3.5" SATA',qty:50,price:8000,total:400000,ispec:'V0004-260413-PT-HD-1TB-3.5SATA-OUT-0001',status:'출고완료'},
+    {date:'2026-04-13',type:'수출 CI',pid:'V0008',pname:'시멜리아',barcode:'SML-OUT-0001',cat:'PT-HD',spec1:'500GB',spec2:'2.5" SATA',qty:30,price:5000,total:150000,ispec:'V0008-260413-PT-HD-500GB-2.5SATA-OUT-0001',status:'명세서발행'},
+  ],
+  intake_hdd: [
+    {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'5Q950009P66KA',size:'500GB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'V0006-26.03.20-HDD-500GB-3.5"-SATA-B-라-1-0002',status:'양품입고'},
+    {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'WMAYP8164322',size:'500GB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'V0006-26.03.20-HDD-500GB-3.5"-SATA-B-라-1-0003',status:'양품입고'},
+    {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'37V7JWNNSCXC',size:'1TB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'V0006-26.03.20-HDD-1TB-3.5"-SATA-B-라-1-0004',status:'양품입고'},
+    {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'5VP7KWDA',size:'1TB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'V0006-26.03.20-HDD-1TB-3.5"-SATA-B-라-1-0005',status:'양품입고'},
+    {date:'26.03.20',pid:'V0006',pname:'경인R&S',barcode:'WCAWF9997561',size:'500GB',inch:'3.5"',spec:'SATA',loc:'B-라-1',ispec:'#ERROR! (AI정제 필요)',status:'오류'},
+    {date:'26.03.17',pid:'V0003',pname:'선봉솔루션',barcode:'SBS-0317-001',size:'1TB',inch:'3.5"',spec:'SATA',loc:'A-가-1',ispec:'V0003-26.03.17-HDD-1TB-3.5"-SATA-A-가-1-0001',status:'양품입고'},
+    {date:'26.03.18',pid:'V0004',pname:'투데이',barcode:'TOD-0318-001',size:'2TB',inch:'3.5"',spec:'SATA',loc:'A-나-1',ispec:'V0004-26.03.18-HDD-2TB-3.5"-SATA-A-나-1-0001',status:'양품입고'},
+    {date:'26.04.02',pid:'V0011',pname:'신기종합메탈',barcode:'SGM-0402-001',size:'1TB',inch:'2.5"',spec:'SATA',loc:'C-가-1',ispec:'V0011-26.04.02-HDD-1TB-2.5"-SATA-C-가-1-0001',status:'양품입고'},
+  ],
+  online: [
+    {date:'2026-03-03',ch:'스마트스토어',type:'노트북',name:'레노버 씽크북 15-IIL i5-10세대 8G 256G',opt:'램 8G SSD256G',qty:1,price:319000,cust:'서지민',invoice:'—',status:'출고대기'},
+    {date:'2026-03-04',ch:'스마트스토어',type:'노트북',name:'LG그램 15Z990 i5-8세대 8G SSD256G',opt:'—',qty:1,price:400000,cust:'임제니',invoice:'—',status:'출고대기'},
+    {date:'2026-03-04',ch:'옥션',type:'모니터',name:'모니터',opt:'—',qty:10,price:1000000,cust:'그리니',invoice:'—',status:'처리중'},
+  ],
+  inventory: [
+    {date:'2026-03-17',co:'선봉솔루션',type:'입고',item:'HDD',in:685,out:'불량스크랩',defect:374,stock:311,recv:'소히둘',ship:'—',note:'불량스크랩'},
+    {date:'2026-03-18',co:'투데이',type:'입고',item:'HDD',in:149,out:'불량반품',defect:30,stock:430,recv:'소히둘',ship:'—',note:'불량반품'},
+    {date:'2026-03-20',co:'경인R&S',type:'입고',item:'HDD',in:64,out:'불량반품',defect:21,stock:473,recv:'소히둘',ship:'—',note:'불량반품'},
+    {date:'2026-03-24',co:'소매',type:'출고',item:'HDD500GB',in:'—',out:'—',defect:'—',stock:473,recv:'—',ship:'아민',note:'소매출고'},
+    {date:'2026-03-24',co:'루나텍',type:'입고',item:'HDD',in:301,out:'불량반품',defect:4,stock:770,recv:'소히둘',ship:'—',note:'—'},
+    {date:'2026-03-24',co:'투데이',type:'입고',item:'HDD',in:47,out:'불량반품',defect:22,stock:795,recv:'소히둘',ship:'—',note:'—'},
+    {date:'2026-03-27',co:'투데이',type:'입고',item:'HDD',in:54,out:'불량반품',defect:42,stock:807,recv:'소히둘',ship:'—',note:'—'},
+    {date:'2026-04-02',co:'신기종합메탈',type:'입고',item:'HDD',in:164,out:'불량반품',defect:26,stock:945,recv:'소히둘',ship:'—',note:'—'},
+    {date:'2026-04-03',co:'투데이',type:'입고',item:'HDD',in:59,out:'—',defect:12,stock:992,recv:'소히둘',ship:'—',note:'—'},
+    {date:'2026-04-10',co:'투데이',type:'입고',item:'HDD',in:52,out:'—',defect:22,stock:1022,recv:'소히둘',ship:'—',note:'—'},
+  ],
+  retail: [
+    {date:'2026-03-03',ch:'스마트스토어',type:'노트북',cat:'LP-GE',brand:'LEN',barcode:'LEN-TB15-001',model:'씽크북 15-IIL i5-10세대',spec1:'i5-10세대',spec2:'8G SSD256G',opt:'램8G SSD256G',qty:1,price:319000,sales:319000,cust:'서지민',invoice:'—',ispec:'V0827-260303-LP-GE-LEN-i5-8G256G-소매동-0001',status:'출고대기'},
+    {date:'2026-03-04',ch:'스마트스토어',type:'노트북',cat:'LP-GE',brand:'LG',barcode:'LG-15Z990-001',model:'LG그램 15Z990 i5-8세대',spec1:'i5-8세대',spec2:'8G SSD256G',opt:'—',qty:1,price:400000,sales:400000,cust:'임제니',invoice:'—',ispec:'V0827-260304-LP-GE-LG-i5-8G256G-소매동-0001',status:'출고대기'},
+    {date:'2026-03-04',ch:'옥션',type:'모니터',cat:'MN-GE',brand:'ETC',barcode:'MON-27-001',model:'모니터 27인치',spec1:'27"',spec2:'FHD',opt:'—',qty:10,price:100000,sales:1000000,cust:'그리니',invoice:'—',ispec:'V0827-260304-MN-GE-ETC-27FHD-소매동-0001',status:'처리중'},
+  ]
+};
+
+// ─── COMPUTED KPI ───
+function calcKPI() {
+  const totalSales = DB.retail.reduce((s,r)=>s+r.sales,0);
+  const totalQty = DB.retail.reduce((s,r)=>s+r.qty,0);
+  const avgInv = 15; // 평균재고 (샘플)
+  const turnover = totalQty / avgInv;
+  const doi = 365 / turnover;
+  document.getElementById('kpi-sales').textContent = totalSales.toLocaleString();
+  document.getElementById('r-sales').textContent = totalSales.toLocaleString();
+  document.getElementById('r-margin').textContent = totalSales.toLocaleString();
+  document.getElementById('r-margin-rate').textContent = '100%';
+  document.getElementById('r-qty').textContent = totalQty;
+  document.getElementById('r-turn').textContent = turnover.toFixed(2);
+  document.getElementById('r-days').textContent = Math.round(doi);
+}
+
+// ─── RENDER TABLES ───
+function renderCat() {
+  document.getElementById('cat-body').innerHTML = DB.categories.map(c=>`
+    <tr>
+      <td><span class="cd">${c.id}</span></td>
+      <td>${c.main}</td><td>${c.sub}</td>
+      <td><span class="bd ${catBdCls(c.main)}">${c.code}</span></td>
+      <td><span class="cd">${c.ms}</span></td><td><span class="cd">${c.ss}</span></td>
+      <td style="font-size:11px;color:var(--t2)">${c.desc}</td>
+    </tr>`).join('');
+}
+function catBdCls(m){return{DESKTOP:'p',LAPTOP:'b',PARTS:'g',SERVER:'w',SMARTPHONE:'gy',MONITOR:'gy'}[m]||'gy';}
+
+function renderBrand() {
+  const uniq = [...new Map(DB.brands.map(b=>[b.name,b])).values()];
+  document.getElementById('brand-body').innerHTML = uniq.map(b=>`
+    <tr>
+      <td style="font-weight:500">${b.name}</td>
+      <td><span class="bd p">${b.short}</span></td>
+      <td><span class="cd">LP-GE-${b.short}-MODEL</span></td>
+      <td style="color:var(--t3)">—</td>
+    </tr>`).join('');
+}
+
+function renderPartner() {
+  document.getElementById('partner-body').innerHTML = DB.partners.map(p=>`
+    <tr>
+      <td><span class="cd">${p.id}</span></td>
+      <td style="font-weight:500">${p.name}</td>
+      <td>${p.abbr}</td>
+      <td><span class="bd ${p.type==='Vendor'?'b':p.type==='Customer'?'g':'w'}">${p.type}</span></td>
+      <td style="color:var(--t3)">${p.date}</td>
+      <td><span class="bd gy">매입/판매</span></td>
+    </tr>`).join('');
+}
+
+function renderProduct() {
+  document.getElementById('prod-body').innerHTML = DB.products.map(p=>`
+    <tr>
+      <td><span class="cd" style="font-size:10px">${p.code}</span></td>
+      <td><span class="bd ${catBdCls(p.cat.split('-')[0]==='LP'?'LAPTOP':p.cat.split('-')[0]==='PT'?'PARTS':'DESKTOP')}">${p.cat}</span></td>
+      <td>${p.brand}</td>
+      <td style="font-size:11.5px;max-width:200px">${p.model}</td>
+      <td style="font-size:11px;color:var(--t2)">${p.spec}</td>
+      <td><span class="bd ${p.grade==='양품'?'g':p.grade==='A등급'?'b':'w'}">${p.grade}</span></td>
+      <td class="r"><b>${p.stock}</b></td>
+      <td><span class="bd ${p.stock>0?'g':'r'}">${p.stock>0?'재고있음':'품절'}</span></td>
+    </tr>`).join('');
+}
+
+function renderIntakeRetail() {
+  const rows = DB.intake_retail;
+  document.getElementById('inret-body').innerHTML = rows.map((r,i)=>`
+    <tr>
+      <td style="color:var(--t3)">${r.date}</td>
+      <td><span class="cd">${r.pid}</span></td>
+      <td>${r.pname}</td>
+      <td style="font-family:monospace;font-size:11px">${r.barcode||'—'}</td>
+      <td><span class="bd b">${r.cat}</span></td>
+      <td>${r.brand}</td>
+      <td style="font-size:11px">${r.spec1||'—'}</td>
+      <td style="font-size:11px">${r.spec2||'—'}</td>
+      <td><span class="cd">${r.loc||'—'}</span></td>
+      <td style="font-size:10px;font-family:monospace;${r.ispec&&r.ispec.includes('ERROR')?'color:var(--er)':''};max-width:180px;word-break:break-all">${r.ispec||'—'}</td>
+      <td class="r"><b>${r.qty}</b></td>
+      <td><span class="bd ${r.grade==='양품'?'g':r.grade==='A등급'?'b':'w'}">${r.grade}</span></td>
+      <td><span class="cd" style="font-size:10px">${r.code}</span></td>
+      <td><span class="bd ${r.status==='완료'?'g':r.status==='오류'?'r':'w'}">${r.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="editRow('intake_retail',${i})">수정</button>
+        <button class="btn sm" style="font-size:10px;padding:3px 8px;color:var(--er);border-color:rgba(220,53,69,.3);" onclick="deleteRow('intake_retail',${i})">삭제</button>
+      </td>
+    </tr>`).join('');
+  const cnt = rows.reduce((s,r)=>s+r.qty,0);
+  if(document.getElementById('inret-count')) document.getElementById('inret-count').textContent=`총 ${rows.length}건`;
+}
+
+function renderWholesaleOut() {
+  const rows = DB.wholesale_out||[];
+  document.getElementById('wo-body').innerHTML = rows.map((r,i)=>`
+    <tr>
+      <td style="color:var(--t3)">${r.date}</td>
+      <td><span class="bd ${r.type==='거래명세서'?'b':'w'}">${r.type}</span></td>
+      <td><span class="cd">${r.pid}</span></td>
+      <td>${r.pname}</td>
+      <td style="font-family:monospace;font-size:11px">${r.barcode||'—'}</td>
+      <td><span class="bd g">${r.cat}</span></td>
+      <td style="font-size:11px">${r.spec1||'—'}</td>
+      <td style="font-size:11px">${r.spec2||'—'}</td>
+      <td style="font-size:10px;font-family:monospace;max-width:180px;word-break:break-all">${r.ispec||'—'}</td>
+      <td class="r">${r.qty}</td>
+      <td class="r">${(r.price||0).toLocaleString()}</td>
+      <td class="r"><b>${(r.total||0).toLocaleString()}</b></td>
+      <td><span class="bd ${r.status==='명세서발행'?'g':r.status==='출고완료'?'b':'w'}">${r.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="loadInvoice(${i})">명세서</button>
+        <button class="btn sm" style="font-size:10px;padding:3px 8px;color:var(--er);border-color:rgba(220,53,69,.3);" onclick="deleteRow('wholesale_out',${i})">삭제</button>
+      </td>
+    </tr>`).join('');
+  const totalAmt = rows.reduce((s,r)=>s+(r.total||0),0);
+  if(document.getElementById('wo-count')) document.getElementById('wo-count').textContent=`총 ${rows.length}건`;
+  if(document.getElementById('wo-qty')) document.getElementById('wo-qty').textContent = rows.reduce((s,r)=>s+r.qty,0);
+  if(document.getElementById('wo-amt')) document.getElementById('wo-amt').textContent = totalAmt.toLocaleString();
+  if(document.getElementById('wo-pend')) document.getElementById('wo-pend').textContent = rows.filter(r=>r.status!=='명세서발행').length;
+  updateInvoicePreview();
+}
+
+function renderIntakeHDD() {
+  document.getElementById('inhdd-body').innerHTML = DB.intake_hdd.map((h,i)=>`
+    <tr>
+      <td style="color:var(--t3)">${h.date}</td>
+      <td><span class="cd">${h.pid}</span></td>
+      <td>${h.pname}</td>
+      <td style="font-family:monospace;font-size:11.5px">${h.barcode}</td>
+      <td><span class="bd g">${h.size}</span></td>
+      <td>${h.inch}</td><td>${h.spec}</td>
+      <td><span class="cd">${h.loc}</span></td>
+      <td style="font-size:10px;font-family:monospace;${h.ispec.includes('ERROR')?'color:var(--er)':''}">${h.ispec}</td>
+      <td><span class="bd ${h.status==='양품입고'?'g':h.status==='오류'?'r':'w'}">${h.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" style="font-size:10px;padding:3px 8px;color:var(--er);border-color:rgba(220,53,69,.3);" onclick="deleteRow('intake_hdd',${i})">삭제</button>
+      </td>
+    </tr>`).join('');
+}
+
+function renderRetail() {
+  const chBdCls = ch => ({'스마트스토어':'g','옥션':'b','쿠팡':'p','G마켓':'w','11번가':'w','직판 (오프라인)':'gy'}[ch]||'gy');
+  document.getElementById('ret-body').innerHTML = DB.retail.map((r,i)=>`
+    <tr>
+      <td style="color:var(--t3)">${r.date}</td>
+      <td><span class="bd ${chBdCls(r.ch)}">${r.ch}</span></td>
+      <td>${r.type}</td>
+      <td style="font-family:monospace;font-size:11px">${r.barcode||r.model||'—'}</td>
+      <td style="font-size:10px;font-family:monospace;max-width:180px;word-break:break-all;color:var(--t2)">${r.ispec||'—'}</td>
+      <td style="font-size:11px;color:var(--t2)">${r.opt}</td>
+      <td class="r">${r.qty}</td>
+      <td class="r">${r.price.toLocaleString()}</td>
+      <td class="r"><b>${r.sales.toLocaleString()}</b></td>
+      <td>${r.cust}</td>
+      <td style="color:var(--t3)">${r.invoice}</td>
+      <td><span class="bd ${r.status==='판매완료'?'g':r.status==='출고대기'?'w':'b'}">${r.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" style="font-size:10px;padding:3px 8px;" onclick="editRow('retail',${i})">수정</button>
+        <button class="btn sm" style="font-size:10px;padding:3px 8px;color:var(--er);border-color:rgba(220,53,69,.3);" onclick="deleteRow('retail',${i})">삭제</button>
+      </td>
+    </tr>`).join('');
+  const cnt = document.getElementById('ret-count');
+  if(cnt) cnt.textContent = `총 ${DB.retail.length}건`;
+}
+
+function renderInventory() {
+  document.getElementById('inv-body').innerHTML = DB.inventory.map(i=>`
+    <tr>
+      <td style="color:var(--t3)">${i.date.replace('2026-','')}</td>
+      <td>${i.co}</td>
+      <td><span class="bd ${i.type==='입고'?'b':'w'}">${i.type}</span></td>
+      <td>${i.item}</td>
+      <td class="r">${i.in===undefined||i.in==='—'?'—':Number(i.in).toLocaleString()}</td>
+      <td class="r" style="font-size:11px;color:var(--er)">${i.out||'—'}</td>
+      <td class="r" style="color:var(--er)">${i.defect===undefined||i.defect==='—'?'—':i.defect}</td>
+      <td class="r"><b style="color:var(--ac)">${Number(i.stock).toLocaleString()}</b></td>
+      <td style="color:var(--t3)">${i.recv}</td>
+      <td style="color:var(--t3)">${i.ship}</td>
+      <td style="font-size:11px;color:var(--t3)">${i.note}</td>
+    </tr>`).join('');
+}
+
+// ─── BAR CHART ───
+function renderBarChart() {
+  const months = ['1월','2월','3월','4월'];
+  const vals = [2,1,3,0];
+  const max = Math.max(...vals,1);
+  const c = document.getElementById('bc-monthly');
+  c.innerHTML = months.map((m,i)=>`
+    <div class="bar-grp">
+      <div class="bar-val">${vals[i]}</div>
+      <div class="bar" style="height:${(vals[i]/max)*120}px;background:var(--ac);opacity:${i===months.length-1?'.4':'1'}"></div>
+      <div class="bar-lbl">${m}</div>
+    </div>`).join('');
+}
+
+// ─── ANALYSIS ───
+function renderAnalysis() {
+  const sales = [...DB.retail].sort((a,b)=>b.sales-a.sales);
+  const qty = [...DB.retail].sort((a,b)=>b.qty-a.qty);
+  document.getElementById('best-sales').innerHTML = sales.map(r=>`
+    <div class="anl-item"><div class="anl-nm">${r.model}</div><div class="anl-v">${r.sales.toLocaleString()}원</div></div>`).join('');
+  document.getElementById('best-qty').innerHTML = qty.map(r=>`
+    <div class="anl-item"><div class="anl-nm">${r.model}</div><div class="anl-v">${r.qty} ea</div></div>`).join('');
+  document.getElementById('best-margin').innerHTML = sales.map(r=>`
+    <div class="anl-item"><div class="anl-nm">${r.model}</div><div class="anl-v" style="color:var(--ac)">${r.price.toLocaleString()}원</div></div>`).join('');
+  const dead = DB.products.filter(p=>p.stock>0);
+  document.getElementById('dead-body').innerHTML = dead.slice(0,5).map(p=>`
+    <tr>
+      <td style="font-size:11.5px">${p.model}</td>
+      <td><span class="bd gy">${p.cat}</span></td>
+      <td class="r">${p.stock} ea</td>
+      <td style="color:var(--t3)">—</td>
+      <td><span class="bd ${p.stock>5?'w':'r'}">30일↑</span></td>
+      <td><button class="btn sm" onclick="toast('판촉 등록')">판촉 등록</button></td>
+    </tr>`).join('');
+}
+
+// ─── CODE GEN ───
+function gc(){
+  const m=document.getElementById('g-main').value;
+  const s=document.getElementById('g-sub').value;
+  const b=document.getElementById('g-brand').value;
+  const mo=document.getElementById('g-model').value||'____';
+  document.getElementById('gc-res').textContent=`${m}-${s}-${b}-${mo}`;
+}
+function uic(){
+  const pid=document.getElementById('ic-pid').value;
+  const dt=document.getElementById('ic-dt').value;
+  const cat=document.getElementById('ic-cat').value;
+  const br=document.getElementById('ic-br').value;
+  const sp=document.getElementById('ic-sp').value;
+  const loc=document.getElementById('ic-loc').value;
+  document.getElementById('ic-r1').textContent=`${cat}-${br}-${sp}`;
+  document.getElementById('ic-r2').textContent=`${pid}-${dt}-${cat}-${br}-${sp}-${loc}-0001`;
+}
+
+// ─── 통합스펙 자동생성 (공통 로직) ───
+// 규칙: [PartnerID]-[yymmdd]-[Category]-[Brand]-[Spec1]-[Spec2]-[Location]-[seq]
+function buildISpec(pid, dateStr, cat, brand, spec1, spec2, loc, seq) {
+  const d = dateStr ? dateStr.replace(/-/g,'').slice(2) : 'yymmdd'; // YYYYMMDD → yymmdd
+  const parts = [
+    pid||'VXXXX', d, cat||'XX-XX', brand||'ETC',
+    spec1||'', spec2||'', loc||''
+  ].filter(x=>x.trim()!=='');
+  const seqStr = String(seq||1).padStart(4,'0');
+  return parts.join('-') + '-' + seqStr;
+}
+
+// 소매입고 통합스펙 실시간 생성
+function genIRetailSpec() {
+  const pid   = (document.getElementById('ir-pid')?.value||'').split(' ')[0];
+  const date  = document.getElementById('ir-date')?.value||'';
+  const cat   = document.getElementById('ir-cat')?.value||'';
+  const brand = document.getElementById('ir-brand')?.value||'';
+  const bc    = document.getElementById('ir-barcode')?.value||'';
+  const s1    = document.getElementById('ir-spec1')?.value||'';
+  const s2    = document.getElementById('ir-spec2')?.value||'';
+  const loc   = document.getElementById('ir-loc')?.value||'';
+  const seq   = (DB.intake_retail?.length||0) + 1;
+  const ispec = buildISpec(pid, date, cat, brand, s1||bc, s2, loc, seq);
+  const el = document.getElementById('ir-ispec-preview');
+  if(el) el.textContent = ispec;
+}
+
+// 소매관리 통합스펙 실시간 생성
+function genRetailSpec() {
+  const pid   = (document.getElementById('rt-pid')?.value||'').split(' ')[0];
+  const date  = document.getElementById('rt-date')?.value||'';
+  const cat   = document.getElementById('rt-cat')?.value||'';
+  const brand = document.getElementById('rt-brand')?.value||'';
+  const bc    = document.getElementById('rt-barcode')?.value||'';
+  const s1    = document.getElementById('rt-spec1')?.value||'';
+  const s2    = document.getElementById('rt-spec2')?.value||'';
+  const seq   = (DB.retail?.length||0) + 1;
+  const ispec = buildISpec(pid, date, cat, brand, s1||bc, s2, '소매출고', seq);
+  const el = document.getElementById('rt-ispec-preview');
+  if(el) el.textContent = ispec;
+}
+
+// 도매출고 통합스펙 실시간 생성
+function genWholesaleSpec() {
+  const pid   = (document.getElementById('wo-pid')?.value||'').split(' ')[0];
+  const date  = document.getElementById('wo-date')?.value||'';
+  const cat   = document.getElementById('wo-cat')?.value||'';
+  const bc    = document.getElementById('wo-barcode')?.value||'';
+  const s1    = document.getElementById('wo-spec1')?.value||'';
+  const s2    = document.getElementById('wo-spec2')?.value||'';
+  const seq   = (DB.wholesale_out?.length||0) + 1;
+  const ispec = buildISpec(pid, date, cat, 'OUT', s1||bc, s2, '', seq);
+  const el = document.getElementById('wo-ispec-preview');
+  if(el) el.textContent = ispec;
+}
+
+// ─── SUBMIT 함수 ───
+function submitIntakeRetail() {
+  const pid    = (document.getElementById('ir-pid')?.value||'').split(' ')[0];
+  const pname  = (document.getElementById('ir-pid')?.options[document.getElementById('ir-pid').selectedIndex].text||'').replace(/^[A-Z0-9]+ \(/,'').replace(/\)$/,'');
+  const date   = document.getElementById('ir-date')?.value||'';
+  const cat    = document.getElementById('ir-cat')?.value||'';
+  const brand  = document.getElementById('ir-brand')?.value||'';
+  const bc     = document.getElementById('ir-barcode')?.value||'—';
+  const s1     = document.getElementById('ir-spec1')?.value||'';
+  const s2     = document.getElementById('ir-spec2')?.value||'';
+  const loc    = document.getElementById('ir-loc')?.value||'';
+  const qty    = parseInt(document.getElementById('ir-qty')?.value||1);
+  const grade  = document.getElementById('ir-grade')?.value||'양품';
+  const ispec  = document.getElementById('ir-ispec-preview')?.textContent||'';
+  const seq    = DB.intake_retail.length + 1;
+  const code   = `${cat}-${brand}-${String(seq).padStart(4,'0')}`;
+  const newRow = {date, pid, pname, barcode:bc, cat, brand, model:bc, spec1:s1, spec2:s2, loc, qty, grade, code, ispec, status:'완료'};
+  DB.intake_retail.unshift(newRow);
+  renderIntakeRetail();
+  saveTable('intake_retail');
+  cm('mo-intake-retail');
+  toast(`✅ 소매 입고 확정 — ${bc} (${qty}ea) 재고 반영됨`);
+  calcKPI();
+}
+
+function submitRetail() {
+  const pid    = (document.getElementById('rt-pid')?.value||'').split(' ')[0];
+  const date   = document.getElementById('rt-date')?.value||'';
+  const ch     = document.getElementById('rt-ch')?.value||'직판';
+  const type   = document.getElementById('rt-type')?.value||'기타';
+  const cat    = document.getElementById('rt-cat')?.value||'';
+  const brand  = document.getElementById('rt-brand')?.value||'';
+  const bc     = document.getElementById('rt-barcode')?.value||'—';
+  const s1     = document.getElementById('rt-spec1')?.value||'';
+  const s2     = document.getElementById('rt-spec2')?.value||'';
+  const qty    = parseInt(document.getElementById('rt-qty')?.value||1);
+  const price  = parseInt(document.getElementById('rt-price')?.value||0);
+  const cust   = document.getElementById('rt-cust')?.value||'—';
+  const inv    = document.getElementById('rt-invoice')?.value||'—';
+  const ispec  = document.getElementById('rt-ispec-preview')?.textContent||'';
+  const newRow = {date, ch, type, cat, brand, barcode:bc, model:bc, spec1:s1, spec2:s2, opt:'—', qty, price, sales:qty*price, cust, invoice:inv, ispec, status:'출고대기'};
+  DB.retail.unshift(newRow);
+  renderRetail();
+  saveTable('retail');
+  cm('mo-retail');
+  toast(`✅ 소매 출고 확정 — ${bc} (${qty}ea) → ${(qty*price).toLocaleString()}원`);
+  calcKPI();
+}
+
+function submitWholesaleOut() {
+  const pid    = (document.getElementById('wo-pid')?.value||'').split(' ')[0];
+  const pname  = (document.getElementById('wo-pid')?.options[document.getElementById('wo-pid').selectedIndex].text||'').replace(/^[A-Z0-9]+ \(/,'').replace(/\)$/,'');
+  const date   = document.getElementById('wo-date')?.value||'';
+  const type   = document.getElementById('wo-type')?.value||'거래명세서';
+  const cat    = document.getElementById('wo-cat')?.value||'';
+  const bc     = document.getElementById('wo-barcode')?.value||'—';
+  const s1     = document.getElementById('wo-spec1')?.value||'';
+  const s2     = document.getElementById('wo-spec2')?.value||'';
+  const qty    = parseInt(document.getElementById('wo-qty')?.value||0);
+  const price  = parseInt(document.getElementById('wo-price')?.value||0);
+  const ispec  = document.getElementById('wo-ispec-preview')?.textContent||'';
+  const newRow = {date, type, pid, pname, barcode:bc, cat, spec1:s1, spec2:s2, qty, price, total:qty*price, ispec, status:'출고완료'};
+  if(!DB.wholesale_out) DB.wholesale_out=[];
+  DB.wholesale_out.unshift(newRow);
+  renderWholesaleOut();
+  saveTable('wholesale_out');
+  cm('mo-ws');
+  toast(`✅ 도매 출고 확정 — ${bc} (${qty}ea) → 거래명세서 미리보기 업데이트`);
+}
+
+// ─── 거래명세서 ───
+function loadInvoice(idx) {
+  const r = (DB.wholesale_out||[])[idx];
+  if(!r) return;
+  document.getElementById('inv-to-name').textContent = r.pname||'—';
+  document.getElementById('inv-to-id').textContent = `Partner ID: ${r.pid}`;
+  document.getElementById('inv-date').textContent = `발행일: ${r.date}`;
+  document.getElementById('inv-items-body').innerHTML = `
+    <tr>
+      <td>1</td>
+      <td>${r.ispec||r.cat+' '+r.spec1}</td>
+      <td><span class="bd g">${r.cat}</span></td>
+      <td class="r">${r.qty}</td>
+      <td class="r">${(r.price||0).toLocaleString()}</td>
+      <td class="r"><b>${(r.total||0).toLocaleString()}</b></td>
+    </tr>`;
+  document.getElementById('inv-total-amt').textContent = `${(r.total||0).toLocaleString()} 원`;
+  document.getElementById('inv-note').textContent = `위 금액을 청구합니다. (${r.type})`;
+  toast('거래명세서 미리보기 로드됨');
+}
+
+function updateInvoicePreview() {
+  const rows = DB.wholesale_out||[];
+  if(rows.length === 0) return;
+  // 첫 번째 항목으로 자동 초기화
+  loadInvoice(0);
+}
+
+function issueInvoice() {
+  toast('✅ 거래명세서 발행 완료 — 파트너에게 전달 준비됨');
+  // 상태 업데이트
+  if(DB.wholesale_out && DB.wholesale_out.length > 0) {
+    DB.wholesale_out[0].status = '명세서발행';
+    saveTable('wholesale_out');
+    renderWholesaleOut();
+  }
+}
+
+function printInvoice() {
+  const preview = document.getElementById('invoice-preview');
+  if(!preview) return;
+  const w = window.open('', '_blank', 'width=700,height=900');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>거래명세서</title>
+  <style>body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:13px;padding:30px;}
+  table{width:100%;border-collapse:collapse;}th,td{padding:8px 12px;border:1px solid #ddd;font-size:12px;}
+  th{background:#0f7a5a;color:white;} .r{text-align:right;} h2{color:#0f7a5a;}
+  .hdr{background:#0f7a5a;color:white;padding:14px 18px;display:flex;justify-content:space-between;border-radius:8px 8px 0 0;}
+  </style></head><body>`);
+  w.document.write(preview.outerHTML);
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(()=>w.print(), 400);
+}
+
+// ─── NAV / PAGE ───
+const pageMeta={
+  dashboard:['대시보드','전체 현황'],
+  category:['카테고리 마스터','Main / Sub / Integrated 코드 체계'],
+  brand:['브랜드 마스터','영문 브랜드 코드 관리'],
+  partner:['파트너 ID 마스터','Vendor / Customer / Dual'],
+  product:['상품 기본정보 (MDM)','중복 없는 통합 마스터'],
+  intake_retail:['소매 입고','입고 → 재고 자동 반영'],
+  intake_wholesale:['도매 입고 (HDD)','대량 입고 수불 자동 연동'],
+  retail:['소매관리','오프라인 · 온라인 전 채널 통합 관리'],
+  wholesale_out:['도매 출고','거래명세서 / CI 발행'],
+  inventory:['재고 현황 (실시간)','입고-출고=현재고 자동 계산'],
+  analysis:['소매 분석','KPI · 베스트 · 죽은재고'],
+  itemcode:['아이템코드 생성','통합 코드 규칙 관리'],
+};
+function gp(id,el){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  const pg=document.getElementById('pg-'+id);
+  if(pg)pg.classList.add('on');
+  if(el)el.classList.add('on');
+  const m=pageMeta[id]||[id,''];
+  document.getElementById('pg-ttl').textContent=m[0];
+  document.getElementById('pg-sub').textContent=m[1];
+}
+function handleTopAdd(){
+  const pg=document.querySelector('.pg.on');if(!pg)return;
+  const id=pg.id.replace('pg-','');
+  const map={dashboard:'mo-intake-retail',category:'mo-cat',brand:'mo-brand',partner:'mo-partner',
+    product:'mo-prod',intake_retail:'mo-intake-retail',intake_wholesale:'mo-intake',
+    retail:'mo-retail',wholesale_out:'mo-ws',inventory:'mo-intake'};
+  // 수정 모드 초기화
+  editTarget = null;
+  const irBtn = document.querySelector('#mo-intake-retail .mo-ft .btn.pr');
+  if(irBtn) { irBtn.textContent='입고 확정'; irBtn.onclick=submitIntakeRetail; }
+  const rtBtn = document.querySelector('#mo-retail .mo-ft .btn.pr');
+  if(rtBtn) { rtBtn.textContent='출고 확정'; rtBtn.onclick=submitRetail; }
+  om(map[id]||'mo-retail');
+}
+
+function filterRetailChannel(sel) {
+  const v = sel.value;
+  document.querySelectorAll('#tb-ret tbody tr').forEach(r => {
+    const ch = r.children[1].textContent;
+    r.style.display = (!v || ch.includes(v)) ? '' : 'none';
+  });
+}
+function filterRetailType(sel) {
+  const v = sel.value;
+  document.querySelectorAll('#tb-ret tbody tr').forEach(r => {
+    const tp = r.children[2].textContent;
+    r.style.display = (!v || tp.includes(v)) ? '' : 'none';
+  });
+}
+
+// ─── 삭제 함수 ───
+function deleteRow(tbl, idx) {
+  const names = {intake_retail:'소매입고',intake_hdd:'도매입고',retail:'소매관리',wholesale_out:'도매출고',inventory:'재고이력'};
+  if(!confirm(`이 ${names[tbl]||tbl} 데이터를 삭제하겠습니까?\n삭제 후 복구할 수 없습니다.`)) return;
+  DB[tbl].splice(idx, 1);
+  saveTable(tbl);
+  renderAll();
+  toast(`🗑 ${names[tbl]} 데이터가 삭제되었습니다`);
+}
+
+// ─── 수정 모달 (범용) ───
+let editTarget = null; // {tbl, idx}
+function editRow(tbl, idx) {
+  editTarget = {tbl, idx};
+  const r = DB[tbl][idx];
+  // 수정 모달에 현재 값 채우기
+  if(tbl === 'intake_retail') {
+    document.getElementById('ir-date').value = r.date||'';
+    document.getElementById('ir-barcode').value = r.barcode||'';
+    document.getElementById('ir-spec1').value = r.spec1||'';
+    document.getElementById('ir-spec2').value = r.spec2||'';
+    document.getElementById('ir-loc').value = r.loc||'';
+    document.getElementById('ir-qty').value = r.qty||1;
+    // pid, cat, brand, grade 드롭다운 매칭
+    setSelectVal('ir-pid', r.pid);
+    setSelectVal('ir-cat', r.cat);
+    setSelectVal('ir-brand', r.brand);
+    setSelectVal('ir-grade', r.grade);
+    document.getElementById('ir-ispec-preview').textContent = r.ispec||'';
+    // 버튼 텍스트 변경
+    const btn = document.querySelector('#mo-intake-retail .mo-ft .btn.pr');
+    if(btn) { btn.textContent='수정 저장'; btn.onclick = saveEditRow; }
+    om('mo-intake-retail');
+  } else if(tbl === 'retail') {
+    document.getElementById('rt-date').value = r.date||'';
+    document.getElementById('rt-barcode').value = r.barcode||'';
+    document.getElementById('rt-spec1').value = r.spec1||'';
+    document.getElementById('rt-spec2').value = r.spec2||'';
+    document.getElementById('rt-qty').value = r.qty||1;
+    document.getElementById('rt-price').value = r.price||0;
+    document.getElementById('rt-cust').value = r.cust||'';
+    document.getElementById('rt-invoice').value = r.invoice||'';
+    setSelectVal('rt-ch', r.ch);
+    setSelectVal('rt-type', r.type);
+    setSelectVal('rt-cat', r.cat);
+    setSelectVal('rt-brand', r.brand);
+    document.getElementById('rt-ispec-preview').textContent = r.ispec||'';
+    const btn = document.querySelector('#mo-retail .mo-ft .btn.pr');
+    if(btn) { btn.textContent='수정 저장'; btn.onclick = saveEditRow; }
+    om('mo-retail');
+  }
+}
+function setSelectVal(id, val) {
+  const el = document.getElementById(id); if(!el) return;
+  for(let i=0;i<el.options.length;i++) {
+    if(el.options[i].value===val||el.options[i].text.includes(val)) { el.selectedIndex=i; break; }
+  }
+}
+function saveEditRow() {
+  if(!editTarget) return;
+  const {tbl, idx} = editTarget;
+  if(tbl==='intake_retail') {
+    DB[tbl][idx] = {
+      ...DB[tbl][idx],
+      date: document.getElementById('ir-date').value,
+      barcode: document.getElementById('ir-barcode').value,
+      spec1: document.getElementById('ir-spec1').value,
+      spec2: document.getElementById('ir-spec2').value,
+      loc: document.getElementById('ir-loc').value,
+      qty: parseInt(document.getElementById('ir-qty').value||1),
+      grade: document.getElementById('ir-grade').value,
+      ispec: document.getElementById('ir-ispec-preview').textContent,
+    };
+    cm('mo-intake-retail');
+    const btn = document.querySelector('#mo-intake-retail .mo-ft .btn.pr');
+    if(btn) { btn.textContent='입고 확정'; btn.onclick = submitIntakeRetail; }
+  } else if(tbl==='retail') {
+    const qty = parseInt(document.getElementById('rt-qty').value||1);
+    const price = parseInt(document.getElementById('rt-price').value||0);
+    DB[tbl][idx] = {
+      ...DB[tbl][idx],
+      date: document.getElementById('rt-date').value,
+      ch: document.getElementById('rt-ch').value,
+      type: document.getElementById('rt-type').value,
+      barcode: document.getElementById('rt-barcode').value,
+      spec1: document.getElementById('rt-spec1').value,
+      spec2: document.getElementById('rt-spec2').value,
+      qty, price, sales: qty*price,
+      cust: document.getElementById('rt-cust').value,
+      invoice: document.getElementById('rt-invoice').value,
+      ispec: document.getElementById('rt-ispec-preview').textContent,
+    };
+    cm('mo-retail');
+    const btn = document.querySelector('#mo-retail .mo-ft .btn.pr');
+    if(btn) { btn.textContent='출고 확정'; btn.onclick = submitRetail; }
+  }
+  editTarget = null;
+  saveTable(tbl);
+  renderAll();
+  toast('✅ 수정 저장 완료');
+}
+
+// ─── 실제 엑셀 업로드 ───
+function simUploadPage(pageId) {
+  // 실제 파일 선택 input 생성
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.xlsx,.xls';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    if(typeof XLSX === 'undefined') { toast('⚠️ SheetJS 로딩 중. 잠시 후 다시 시도해주세요.'); return; }
+    toast('📂 파일 읽는 중...');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const wb = XLSX.read(ev.target.result, {type:'binary'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+        if(!rows.length) { toast('⚠️ 데이터가 없습니다'); return; }
+        processUpload(pageId, rows);
+      } catch(err) { toast('❌ 파일 읽기 실패: ' + err.message); }
+    };
+    reader.readAsBinaryString(file);
+  };
+  input.click();
+}
+
+function processUpload(pageId, rows) {
+  let added = 0, skipped = 0;
+  const colMap = {
+    intake_retail: { date:'입고일', pid:'Partner ID', pname:'파트너명', barcode:'바코드/모델', cat:'카테고리', brand:'브랜드', spec1:'스펙1', spec2:'스펙2', loc:'위치 ID', qty:'수량', grade:'품질등급', status:'상태' },
+    intake_hdd:    { date:'입고일', pid:'Partner ID', pname:'파트너명', barcode:'바코드 모델', size:'용량', inch:'인치', spec:'규격', loc:'위치', status:'상태' },
+    retail:        { date:'거래일', ch:'판매채널', type:'종류', barcode:'바코드/모델', qty:'수량', price:'판매단가', cust:'고객명', invoice:'송장번호', status:'상태' },
+    wholesale_out: { date:'출고일', type:'유형', pid:'Partner ID', pname:'거래처명', barcode:'바코드/모델', cat:'카테고리', spec1:'스펙1', spec2:'스펙2', qty:'수량', price:'단가' },
+    inventory:     { date:'날짜', co:'업체명', type:'구분', item:'품목', in:'입고', out:'출고', defect:'불량', stock:'재고', recv:'입고수령인', ship:'출고자', note:'비고' },
+  };
+  const map = colMap[pageId];
+  if(!map) { toast('⚠️ 지원하지 않는 업로드 형식입니다'); return; }
+
+  rows.forEach(row => {
+    const newRow = {};
+    Object.entries(map).forEach(([key, col]) => {
+      let val = row[col] ?? row[Object.keys(row).find(k=>k.includes(col.slice(0,4)))||''] ?? '';
+      if(key==='qty'||key==='price'||key==='stock'||key==='in'||key==='defect') val = parseInt(val)||0;
+      newRow[key] = val;
+    });
+    // 필수값 체크
+    if(!newRow.date) { skipped++; return; }
+    // retail sales 자동계산
+    if(pageId==='retail') newRow.sales = (newRow.qty||0)*(newRow.price||0);
+    // ispec 자동생성
+    if(pageId==='intake_retail'||pageId==='retail'||pageId==='wholesale_out') {
+      newRow.ispec = buildISpec(newRow.pid||'', newRow.date||'', newRow.cat||'', newRow.brand||'OUT', newRow.spec1||'', newRow.spec2||'', newRow.loc||'', (DB[pageId]?.length||0)+added+1);
+    }
+    if(!DB[pageId]) DB[pageId]=[];
+    DB[pageId].push(newRow);
+    added++;
+  });
+
+  saveTable(pageId);
+  renderAll();
+  toast(`✅ 업로드 완료 — ${added}건 추가, ${skipped}건 건너뜀`);
+}
+
+// ─── MODAL ───
+function om(id){document.getElementById(id).classList.add('op');}
+function cm(id){document.getElementById(id).classList.remove('op');}
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',function(e){
+  // 배경(.mo) 또는 .mo-inner 클릭시 닫기
+  if(e.target===this||e.target.classList.contains('mo-inner')) this.classList.remove('op');
+}));
+
+// ─── FILTER ───
+function ft(inp,tid){
+  const v=inp.value.toLowerCase();
+  document.querySelectorAll('#'+tid+' tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(v)?'':'none');
+}
+function filterCatMain(sel){
+  const v=sel.value;
+  document.querySelectorAll('#tb-cat tbody tr').forEach(r=>r.style.display=(!v||r.children[1].textContent===v)?'':'none');
+}
+
+// ─── TABS ───
+function st(prefix,idx,el){
+  document.querySelectorAll(`[id^="${prefix}-"]`).forEach(p=>p.classList.remove('on'));
+  document.getElementById(`${prefix}-${idx}`).classList.add('on');
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ─── TOAST ───
+let tt;
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');
+  clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2500);
+}
+
+// ─── XLSX DOWNLOAD ENGINE ───
+// SheetJS(xlsx.full.min.js)를 사용해 실제 .xlsx 파일 생성 후 다운로드
+function xlsxDownload(type) {
+  if (typeof XLSX === 'undefined') {
+    toast('⚠️ 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+
+  const configs = {
+    // ── 소매 입고 ──
+    intake_retail: {
+      filename: `소매입고_${dateStr}.xlsx`,
+      sheets: [
+        {
+          name: '소매입고',
+          headers: ['입고일','Partner ID','파트너명','바코드/모델','카테고리','브랜드','스펙1','스펙2','위치 ID','통합스펙(자동생성)','수량','품질등급','Item Code','상태'],
+          rows: DB.intake_retail.map(r => [
+            r.date, r.pid, r.pname, r.barcode||'', r.cat, r.brand,
+            r.spec1||'', r.spec2||'', r.loc||'', r.ispec||'',
+            r.qty, r.grade, r.code, r.status
+          ])
+        },
+        {
+          name: '입력 가이드',
+          headers: ['컬럼명','설명','예시','필수여부'],
+          rows: [
+            ['입고일','입고 날짜','2026-03-20','필수'],
+            ['Partner ID','파트너 ID (마스터 기준)','V0827','필수'],
+            ['파트너명','파트너 명칭','카카오모빌리티','필수'],
+            ['바코드/모델','바코드 스캔 또는 모델명','MACBOOK2024-001','필수'],
+            ['카테고리','Integrated Category 코드','LP-GE','필수'],
+            ['브랜드','Brand Short 코드','APL','필수'],
+            ['스펙1','CPU / 용량 등 1차 스펙','M4 PRO 16"','선택'],
+            ['스펙2','RAM / 저장장치 등 2차 스펙','48G 512G','선택'],
+            ['위치 ID','창고 위치','소매동-A1','필수'],
+            ['통합스펙','자동생성 (비워두면 자동 기입)','V0827-260320-LP-GE-APL-...','자동'],
+            ['수량','입고 수량 (ea)','1','필수'],
+            ['품질등급','양품 / A등급 / B등급 / 불량','양품','필수'],
+            ['Item Code','아이템 코드 (없으면 자동생성)','LP-GE-APL-MB2024','선택'],
+            ['상태','완료 / 검수중 / 오류','완료','필수'],
+          ]
+        }
+      ]
+    },
+
+    // ── 거래명세서 ──
+    invoice: {
+      filename: `거래명세서_${dateStr}.xlsx`,
+      sheets: [
+        {
+          name: '거래명세서',
+          headers: ['No.','출고일','거래처명','Partner ID','품목/통합스펙','카테고리','수량','단가','금액','유형'],
+          rows: (DB.wholesale_out||[]).map((r,i) => [
+            i+1, r.date, r.pname, r.pid, r.ispec||`${r.cat} ${r.spec1}`,
+            r.cat, r.qty, r.price||0, r.total||0, r.type
+          ])
+        },
+        {
+          name: '합계',
+          headers: ['항목','값','단위'],
+          rows: [
+            ['총 출고건수', (DB.wholesale_out||[]).length, '건'],
+            ['총 출고수량', (DB.wholesale_out||[]).reduce((s,r)=>s+r.qty,0), 'ea'],
+            ['총 공급가액', (DB.wholesale_out||[]).reduce((s,r)=>s+(r.total||0),0), '원'],
+            ['발행일', new Date().toLocaleDateString('ko-KR'), ''],
+            ['공급자', '그리니시스템', ''],
+          ]
+        }
+      ]
+    },
+
+    // ── 도매 입고 (HDD) ──
+    intake_wholesale: {
+      filename: `도매입고_HDD_${dateStr}.xlsx`,
+      sheets: [
+        {
+          name: '도매입고(HDD)',
+          headers: ['입고일','Partner ID','파트너명','바코드 모델','용량','인치','규격','위치 ID','통합스펙(자동생성)','상태'],
+          rows: DB.intake_hdd.map(r => [
+            r.date, r.pid, r.pname, r.barcode,
+            r.size, r.inch, r.spec, r.loc, r.ispec, r.status
+          ])
+        },
+        {
+          name: '입력 가이드',
+          headers: ['컬럼명','설명','예시','필수여부'],
+          rows: [
+            ['입고일','입고 날짜 (yy.mm.dd 또는 YYYY-MM-DD)','26.03.20','필수'],
+            ['Partner ID','파트너 ID','V0006','필수'],
+            ['파트너명','파트너 명칭','경인R&S','필수'],
+            ['바코드 모델','바코드 스캔 또는 시리얼번호','5Q950009P66KA','필수'],
+            ['용량','HDD 용량','500GB / 1TB / 2TB','필수'],
+            ['인치','HDD 인치 규격','3.5" / 2.5"','필수'],
+            ['규격','인터페이스','SATA / SAS / NVMe','필수'],
+            ['위치 ID','창고 위치','B-라-1','필수'],
+            ['통합스펙','자동생성 (비워두면 자동 기입)','V0006-26.03.20-HDD-1TB-...','선택'],
+            ['상태','양품입고 / 장기재고 / 오류','양품입고','필수'],
+          ]
+        }
+      ]
+    },
+
+    // ── 소매관리 (전 채널) ──
+    retail: {
+      filename: `소매관리_${dateStr}.xlsx`,
+      sheets: [
+        {
+          name: '소매거래내역',
+          headers: ['거래일','판매채널','종류','모델명','옵션','수량','판매단가','매출','고객명','송장번호','상태'],
+          rows: DB.retail.map(r => [
+            r.date, r.ch, r.type, r.model, r.opt,
+            r.qty, r.price, r.sales, r.cust, r.invoice, r.status
+          ])
+        },
+        {
+          name: 'KPI 요약',
+          headers: ['항목','값','단위'],
+          rows: (()=>{
+            const totalSales = DB.retail.reduce((s,r)=>s+r.sales,0);
+            const totalQty   = DB.retail.reduce((s,r)=>s+r.qty,0);
+            const avgInv = 15;
+            const turnover = +(totalQty/avgInv).toFixed(2);
+            const doi = +(365/turnover).toFixed(1);
+            return [
+              ['총 매출', totalSales, '원'],
+              ['총 마진', totalSales, '원 (매입가 미입력 시 매출과 동일)'],
+              ['평균 마진율', '—', '매입가 입력 시 자동 계산'],
+              ['총 판매수량', totalQty, 'ea'],
+              ['재고회전율', turnover, '회'],
+              ['재고일수', doi, '일'],
+              ['집계 기준일', new Date().toLocaleDateString('ko-KR'), ''],
+            ];
+          })()
+        },
+        {
+          name: '입력 가이드',
+          headers: ['컬럼명','설명','예시','필수여부'],
+          rows: [
+            ['거래일','판매/출고 날짜','2026-03-03','필수'],
+            ['판매채널','직판(오프라인) / 스마트스토어 / 옥션 / 쿠팡 / G마켓 / 11번가','스마트스토어','필수'],
+            ['종류','상품 종류 (대분류)','노트북 / 모니터 / 데스크탑','필수'],
+            ['모델명','상품 모델명 또는 쇼핑몰 등록 품목명','LG그램 15Z990 i5-8세대','필수'],
+            ['옵션','옵션 또는 대체모델 정보','램 8G SSD256G','선택'],
+            ['수량','판매 수량','1','필수'],
+            ['판매단가','개당 판매가격 (원)','400000','필수'],
+            ['매출','총 매출 = 수량 × 판매단가 (자동계산 가능)','400000','선택'],
+            ['고객명','구매 고객명','홍길동','선택'],
+            ['송장번호','택배 송장번호','123456789012','선택'],
+            ['상태','출고대기 / 처리중 / 판매완료','판매완료','필수'],
+          ]
+        }
+      ]
+    },
+
+    // ── 도매 출고 ──
+    wholesale_out: {
+      filename: `도매출고_${dateStr}.xlsx`,
+      sheets: [
+        {
+          name: '도매출고',
+          headers: ['출고일','출고유형','Partner ID','거래처명','Sub Category','모델','시리얼번호','수량','단가','합계'],
+          rows: [
+            // 현재 등록된 도매출고 데이터 (샘플)
+            ['2026-04-13','거래명세서','V0004','투데이','PT-HD','HDD 500GB','—',0,0,0],
+            ['2026-04-13','수출 CI','V0008','시멜리아','PT-HD','HDD 1TB','—',0,0,0],
+          ]
+        },
+        {
+          name: '입력 가이드',
+          headers: ['컬럼명','설명','예시','필수여부'],
+          rows: [
+            ['출고일','출고 날짜','2026-04-13','필수'],
+            ['출고유형','거래명세서 / 수출 CI','거래명세서','필수'],
+            ['Partner ID','거래처 파트너 ID','V0004','필수'],
+            ['거래처명','거래처 명칭','투데이','필수'],
+            ['Sub Category','상품 카테고리 코드','PT-HD','필수'],
+            ['모델','상품 모델명','HDD 500GB','필수'],
+            ['시리얼번호','시리얼 또는 Item Code','—','선택'],
+            ['수량','출고 수량','10','필수'],
+            ['단가','개당 단가 (원)','5000','필수'],
+            ['합계','수량 × 단가 (자동계산 가능)','50000','선택'],
+          ]
+        }
+      ]
+    },
+
+    // ── 재고 현황 ──
+    inventory: {
+      filename: `재고현황_${dateStr}.xlsx`,
+      sheets: [
+        {
+          name: '수불이력',
+          headers: ['날짜','업체명','구분','품목','입고','출고','불량','재고','입고수령인','출고자','비고'],
+          rows: DB.inventory.map(i => [
+            i.date, i.co, i.type, i.item,
+            i.in === '—' ? '' : i.in,
+            i.out === '—' ? '' : i.out,
+            i.defect === '—' ? '' : i.defect,
+            i.stock, i.recv, i.ship, i.note
+          ])
+        },
+        {
+          name: '카테고리별재고',
+          headers: ['카테고리','코드','재고수량','상태'],
+          rows: [
+            ['LAPTOP (APPLE)','LP-GE-APL',18,'양호'],
+            ['LAPTOP (LENOVO)','LP-GE-LEN',4,'부족'],
+            ['HDD (PARTS)','PT-HD',1022,'과잉'],
+            ['MONITOR','MN-GE',0,'품절'],
+          ]
+        },
+        {
+          name: '재고요약',
+          headers: ['항목','값','단위'],
+          rows: [
+            ['현재 총재고', DB.inventory[DB.inventory.length-1].stock, 'ea'],
+            ['누적 입고', 1563, 'ea'],
+            ['출고+불량', 541, 'ea'],
+            ['장기재고', 43, 'ea'],
+            ['집계 기준일', new Date().toLocaleDateString('ko-KR'), ''],
+          ]
+        }
+      ]
+    }
+  };
+
+  const cfg = configs[type];
+  if (!cfg) { toast('⚠️ 다운로드 설정 없음'); return; }
+
+  try {
+    cfg.sheets.forEach(s => {
+      const wsData = [s.headers, ...s.rows];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // ── 헤더 행 스타일 (배경색 + 굵게) ──
+      const hdrRange = XLSX.utils.decode_range(ws['!ref']);
+      for (let c = hdrRange.s.c; c <= hdrRange.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[addr]) {
+          ws[addr].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: '0F7A5A' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: {
+              top:    { style: 'thin', color: { rgb: 'CCCCCC' } },
+              bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
+              left:   { style: 'thin', color: { rgb: 'CCCCCC' } },
+              right:  { style: 'thin', color: { rgb: 'CCCCCC' } },
+            }
+          };
+        }
+      }
+
+      // ── 데이터 행 스타일 ──
+      for (let r = 1; r <= s.rows.length; r++) {
+        for (let c = hdrRange.s.c; c <= hdrRange.e.c; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (ws[addr]) {
+            ws[addr].s = {
+              fill: { fgColor: { rgb: r % 2 === 0 ? 'F5F4F0' : 'FFFFFF' } },
+              border: {
+                top:    { style: 'thin', color: { rgb: 'E8E7E1' } },
+                bottom: { style: 'thin', color: { rgb: 'E8E7E1' } },
+                left:   { style: 'thin', color: { rgb: 'E8E7E1' } },
+                right:  { style: 'thin', color: { rgb: 'E8E7E1' } },
+              },
+              alignment: { vertical: 'center' }
+            };
+          }
+        }
+      }
+
+      // ── 열 너비 자동 조정 ──
+      const colWidths = s.headers.map((h, ci) => {
+        const maxLen = Math.max(
+          h.length,
+          ...s.rows.map(row => String(row[ci] ?? '').length)
+        );
+        return { wch: Math.min(Math.max(maxLen + 2, 8), 40) };
+      });
+      ws['!cols'] = colWidths;
+
+      // ── 행 높이 ──
+      ws['!rows'] = [{ hpt: 22 }]; // 헤더 행 높이
+
+      // ── 틀 고정 (헤더 아래) ──
+      ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
+
+      XLSX.utils.book_append_sheet(wb, ws, s.name);
+    });
+
+    // ── 파일 저장 ──
+    XLSX.writeFile(wb, cfg.filename, { bookType: 'xlsx', type: 'binary', cellStyles: true });
+    toast(`✅ ${cfg.filename} 다운로드 완료`);
+
+  } catch(e) {
+    console.error(e);
+    toast('❌ 파일 생성 중 오류가 발생했습니다');
+  }
+}
+
+// ── DATE DISPLAY ──
+function setDate(){
+  const now=new Date();
+  document.querySelector('.tb-date') && (document.querySelector('.tb-date').textContent=now.toLocaleDateString('ko-KR'));
+}
+
+// ── RENDER ALL ──
+function renderAll() {
+  renderCat(); renderBrand(); renderPartner(); renderProduct();
+  renderIntakeRetail(); renderIntakeHDD(); renderRetail();
+  renderWholesaleOut(); renderInventory(); renderBarChart();
+  renderAnalysis(); calcKPI();
+  const inv = DB.inventory;
+  if(inv?.length) document.getElementById('inv-total').textContent = inv[inv.length-1].stock.toLocaleString();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  FIREBASE 실시간 공유 엔진  (4~10명 동시 사용 최적화)
+//  ① 실시간 데이터 동기화   ② 접속자 현황  ③ 변경 이력 로그
+//  ④ 오프라인 로컬 자동 백업  ⑤ 충돌 방지 (syncPaused)
+// ═══════════════════════════════════════════════════════════════════
+const FB_CONFIG = { apiKey:'', projectId:'', dbUrl:'' };
+const SYNC_TABLES = ['intake_retail','intake_hdd','retail','wholesale_out','inventory'];
+const LS_KEY='greeny_scm_backup', LS_CFG='greeny_fb_cfg', LS_USER='greeny_user_name';
+
+let fbReady=false, lastSyncAt=null, myUserId=null, myUserName='', syncPaused=false;
+
+function getMyUserId(){
+  let uid=sessionStorage.getItem('greeny_uid');
+  if(!uid){uid='u_'+Math.random().toString(36).slice(2,9);sessionStorage.setItem('greeny_uid',uid);}
+  return uid;
+}
+
+// ── Firebase 초기화 ──
+function initFirebase(){
+  myUserId=getMyUserId();
+  myUserName=localStorage.getItem(LS_USER)||'사용자';
+  if(!FB_CONFIG.apiKey||!FB_CONFIG.dbUrl){ showSetupBanner(); loadFromLocal(); renderAll(); setDate(); return; }
+  loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',()=>{
+    loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',()=>{
+      try{
+        if(!firebase.apps.length) firebase.initializeApp({apiKey:FB_CONFIG.apiKey,projectId:FB_CONFIG.projectId,databaseURL:FB_CONFIG.dbUrl});
+        fbReady=true; setStatus('connecting');
+        startDataSync(); startPresence(); startChangeLog();
+      }catch(e){ onFbError(e); }
+    });
+  });
+}
+function loadScript(src,cb){
+  const s=document.createElement('script'); s.src=src;
+  s.onload=cb; s.onerror=()=>onFbError(new Error('SDK 로드 실패'));
+  document.head.appendChild(s);
+}
+
+// ── 데이터 실시간 동기화 ──
+function startDataSync(){
+  const db=firebase.database();
+  SYNC_TABLES.forEach(tbl=>{
+    db.ref('scm/data/'+tbl).on('value',snap=>{
+      if(syncPaused) return;
+      const raw=snap.val();
+      if(raw!==null) DB[tbl]=Array.isArray(raw)?raw.filter(Boolean):Object.values(raw).filter(Boolean);
+      renderAll(); setDate(); setStatus('connected');
+      lastSyncAt=new Date(); updateSyncTime(); saveLocal();
+    },onFbError);
+  });
+}
+
+// ── 저장 (자동 재시도 포함) ──
+async function saveTable(tbl){
+  if(!fbReady){ saveLocal(); return; }
+  syncPaused=true;
+  try{
+    const clean=(DB[tbl]||[]).filter(Boolean);
+    await firebase.database().ref('scm/data/'+tbl).set(clean);
+    saveLocal(); logChange(tbl,clean.length);
+    setStatus('connected'); lastSyncAt=new Date(); updateSyncTime();
+  }catch(e){
+    console.warn('FB save error:',e); saveLocal();
+    toast('⚠️ 저장 실패 — 3초 후 재시도');
+    setTimeout(()=>saveTable(tbl),3000);
+  }finally{ setTimeout(()=>{ syncPaused=false; },600); }
+}
+
+// ── Presence — 실시간 접속자 현황 ──
+function startPresence(){
+  const db=firebase.database();
+  const meRef=db.ref('scm/presence/'+myUserId);
+  db.ref('.info/connected').on('value',snap=>{
+    if(!snap.val()) return;
+    meRef.set({name:myUserName,page:getCurrentPage(),at:Date.now()});
+    meRef.onDisconnect().remove();
+  });
+  db.ref('scm/presence').on('value',snap=>renderPresence(snap.val()||{}));
+  document.querySelectorAll('.ni').forEach(btn=>btn.addEventListener('click',()=>{
+    if(fbReady) meRef.update({page:getCurrentPage(),at:Date.now()});
+  }));
+}
+function getCurrentPage(){ return document.getElementById('pg-ttl')?.textContent||'—'; }
+function renderPresence(users){
+  const now=Date.now();
+  const active=Object.entries(users).filter(([,v])=>now-v.at<120000);
+  const makeChips=active.map(([uid,v])=>{
+    const me=uid===myUserId;
+    const c=me?'var(--acd)':'var(--in)', bg=me?'var(--acl)':'var(--inl)';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:'+bg+';color:'+c+';padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap">'+
+      '<span style="width:5px;height:5px;border-radius:50%;background:'+c+';flex-shrink:0"></span>'+
+      escHtml(v.name||'익명')+(me?' (나)':'')+'</span>';
+  }).join('');
+  // topbar
+  const topEl=document.getElementById('presence-list');
+  if(topEl) topEl.innerHTML=makeChips;
+  // dashboard
+  const dashEl=document.getElementById('presence-list-dash');
+  if(dashEl) dashEl.innerHTML=makeChips||'<span style="font-size:11px;color:var(--t3)">연결된 팀원이 없습니다</span>';
+  const cnt=document.getElementById('presence-count');
+  if(cnt) cnt.textContent=active.length+'명 접속 중';
+}
+
+// ── 변경 이력 로그 ──
+function startChangeLog(){
+  firebase.database().ref('scm/changelog').limitToLast(40).on('value',snap=>{
+    const items=snap.val()?Object.values(snap.val()).reverse():[];
+    renderChangeLog(items);
+  });
+}
+function logChange(tbl,count){
+  if(!fbReady) return;
+  firebase.database().ref('scm/changelog').push({user:myUserName,uid:myUserId,tbl,count,at:Date.now()});
+}
+const TBL_NAME={intake_retail:'소매입고',intake_hdd:'도매입고',retail:'소매관리',wholesale_out:'도매출고',inventory:'재고'};
+function renderChangeLog(logs){
+  const el=document.getElementById('changelog-body'); if(!el) return;
+  el.innerHTML=logs.slice(0,20).map(l=>{
+    const dt=new Date(l.at);
+    const ts=dt.toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const isMe=l.uid===myUserId;
+    return '<tr>'
+      +'<td style="color:var(--t3);font-size:10px;white-space:nowrap">'+ts+'</td>'
+      +'<td style="font-size:11px;font-weight:'+(isMe?'600':'400')+';color:'+(isMe?'var(--ac)':'inherit')+'">'+escHtml(l.user||'익명')+(isMe?' ★':'')+'</td>'
+      +'<td><span class="bd b" style="font-size:10px">'+(TBL_NAME[l.tbl]||l.tbl)+'</span></td>'
+      +'<td style="font-size:10px;color:var(--t2)">'+l.count+'건</td>'
+      +'</tr>';
+  }).join('');
+}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── 오프라인 로컬 백업 ──
+function onFbError(e){ console.warn('FB error:',e); setStatus('offline'); loadFromLocal(); renderAll(); setDate(); toast('⚠️ 클라우드 연결 실패 — 로컬 모드로 작동'); }
+function saveLocal(){ try{ const s={}; SYNC_TABLES.forEach(k=>{if(DB[k])s[k]=DB[k];}); localStorage.setItem(LS_KEY,JSON.stringify(s)); }catch(e){} }
+function loadFromLocal(){ try{ const raw=localStorage.getItem(LS_KEY); if(!raw)return; const s=JSON.parse(raw); SYNC_TABLES.forEach(k=>{if(s[k]?.length)DB[k]=s[k];}); }catch(e){} }
+
+// ── 상태 표시 UI ──
+function setStatus(state){
+  const el=document.getElementById('sync-status'); if(!el) return;
+  const map={setup:{t:'⚙️ 설정 필요',c:'var(--wa)'},connecting:{t:'🔄 연결 중...',c:'var(--t3)'},connected:{t:'🟢 공유 중',c:'var(--ac)'},offline:{t:'🔴 오프라인',c:'var(--er)'}};
+  const s=map[state]||map.offline; el.textContent=s.t; el.style.color=s.c;
+}
+function updateSyncTime(){ const el=document.getElementById('sync-time'); if(el&&lastSyncAt) el.textContent=lastSyncAt.toLocaleTimeString('ko-KR'); }
+
+// ── 설정 배너 ──
+function showSetupBanner(){ setStatus('setup'); const b=document.getElementById('setup-banner'); if(b) b.style.display='flex'; }
+function hideSetupBanner(){ const b=document.getElementById('setup-banner'); if(b) b.style.display='none'; }
+function applyFbConfig(){
+  const key=document.getElementById('fb-api-key')?.value.trim();
+  const pid=document.getElementById('fb-project-id')?.value.trim();
+  const url=document.getElementById('fb-db-url')?.value.trim();
+  const uname=document.getElementById('fb-user-name')?.value.trim()||'사용자';
+  if(!key||!pid||!url){ toast('⚠️ 3가지 항목을 모두 입력해주세요'); return; }
+  FB_CONFIG.apiKey=key; FB_CONFIG.projectId=pid; FB_CONFIG.dbUrl=url; myUserName=uname;
+  localStorage.setItem(LS_CFG,JSON.stringify({key,pid,url})); localStorage.setItem(LS_USER,uname);
+  hideSetupBanner(); toast('🔥 Firebase 연결 중...'); initFirebase();
+}
+function loadSavedFbConfig(){
+  try{
+    const raw=localStorage.getItem(LS_CFG); if(!raw) return false;
+    const {key,pid,url}=JSON.parse(raw);
+    FB_CONFIG.apiKey=key; FB_CONFIG.projectId=pid; FB_CONFIG.dbUrl=url;
+    ['fb-api-key','fb-project-id','fb-db-url'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.value=[key,pid,url][i]||'';});
+    const ne=document.getElementById('fb-user-name'); if(ne) ne.value=localStorage.getItem(LS_USER)||'';
+    return !!(key&&pid&&url);
+  }catch(e){ return false; }
+}
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded',()=>{ loadSavedFbConfig(); initFirebase(); setDate(); });
+</script>
+
+<!-- ══ Firebase 설정 배너 ══ -->
+<div id="setup-banner" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;">
+  <div style="background:#fff;border-radius:16px;width:580px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;margin-bottom:40px;">
+    <!-- 헤더 -->
+    <div style="background:linear-gradient(135deg,#0f7a5a,#085041);color:white;padding:22px 26px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="font-size:20px">🔥</span>
+        <div style="font-size:16px;font-weight:600;">Firebase 실시간 공유 설정</div>
+      </div>
+      <div style="font-size:12px;opacity:.85;">4~10명이 동일 데이터를 실시간으로 보고, 입력하고, 동기화합니다</div>
+    </div>
+    <div style="padding:24px;">
+
+      <!-- 사용자 이름 -->
+      <div style="margin-bottom:18px;">
+        <div style="font-size:11px;font-weight:600;color:#6a6a64;margin-bottom:5px;">내 이름 (누가 입력했는지 팀원에게 표시됩니다)</div>
+        <input id="fb-user-name" type="text" placeholder="예: 위세희" style="width:100%;padding:9px 12px;border:1.5px solid rgba(15,122,90,.4);border-radius:8px;font-size:13px;font-family:inherit;outline:none;">
+      </div>
+
+      <!-- 단계 안내 -->
+      <div style="background:#f5f4f0;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:12px;line-height:2;color:#444;">
+        <b style="color:#0f7a5a;">① Firebase 콘솔 접속</b> → <a href="https://console.firebase.google.com" target="_blank" style="color:#0f7a5a;font-weight:500;">console.firebase.google.com</a><br>
+        <b style="color:#0f7a5a;">② 새 프로젝트 생성</b> (예: greeny-scm) → Google 애널리틱스 비활성화 가능<br>
+        <b style="color:#0f7a5a;">③ 빌드 → Realtime Database → 데이터베이스 만들기</b> → 테스트 모드 선택<br>
+        <b style="color:#0f7a5a;">④ 프로젝트 설정(⚙️) → 일반 → 내 앱 → 웹 앱 추가 → 설정값 확인</b>
+      </div>
+
+      <!-- 입력 필드 -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+        <div>
+          <div style="font-size:11px;font-weight:500;color:#6a6a64;margin-bottom:4px;">API Key <span style="color:#dc3545">*</span></div>
+          <input id="fb-api-key" type="text" placeholder="AIzaSy..." style="width:100%;padding:8px 12px;border:0.5px solid rgba(0,0,0,.2);border-radius:7px;font-size:12px;font-family:monospace;outline:none;">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:500;color:#6a6a64;margin-bottom:4px;">Project ID <span style="color:#dc3545">*</span></div>
+          <input id="fb-project-id" type="text" placeholder="greeny-scm" style="width:100%;padding:8px 12px;border:0.5px solid rgba(0,0,0,.2);border-radius:7px;font-size:12px;font-family:monospace;outline:none;">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:500;color:#6a6a64;margin-bottom:4px;">Database URL <span style="color:#dc3545">*</span></div>
+          <input id="fb-db-url" type="text" placeholder="https://greeny-scm-default-rtdb.firebaseio.com" style="width:100%;padding:8px 12px;border:0.5px solid rgba(0,0,0,.2);border-radius:7px;font-size:12px;font-family:monospace;outline:none;">
+        </div>
+      </div>
+
+      <!-- Firebase 보안 규칙 안내 -->
+      <details style="margin-bottom:16px;">
+        <summary style="font-size:11px;font-weight:600;color:#0f7a5a;cursor:pointer;padding:8px 0;">⚡ Firebase 보안 규칙 설정 (팀 내부 전용으로 잠금)</summary>
+        <div style="margin-top:8px;background:#1c1c1a;color:#9fe1cb;font-family:monospace;font-size:11px;padding:12px 14px;border-radius:7px;line-height:1.7;">
+{<br>
+&nbsp;&nbsp;"rules": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"scm": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".read": true,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".write": true<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+        </div>
+        <div style="font-size:10px;color:#888;margin-top:6px;">Firebase 콘솔 → Realtime Database → 규칙 탭에 위 내용을 붙여넣기 하세요.</div>
+      </details>
+
+      <!-- 버튼 -->
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="hideSetupBanner();loadFromLocal();renderAll();setDate();setStatus('offline');"
+          style="padding:9px 18px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit;">
+          로컬 모드로 계속
+        </button>
+        <button onclick="applyFbConfig()"
+          style="padding:9px 22px;border:none;border-radius:8px;background:#0f7a5a;color:white;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;">
+          🔥 연결하기
+        </button>
+      </div>
+      <div style="margin-top:12px;padding:10px 12px;background:#e0f2eb;border-radius:8px;font-size:11px;color:#074532;line-height:1.7;">
+        💡 <b>한 번 입력하면 이 PC에서 자동 기억됩니다.</b><br>
+        팀원에게는 이 HTML 파일 + Firebase 설정값(4가지)을 공유하면 됩니다.
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
