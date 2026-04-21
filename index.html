@@ -140,10 +140,10 @@ tbody tr:hover td{background:#faf9f7;}
 .form-note{font-size:10px;color:var(--t3);margin-top:2px;}
 
 /* ── MODAL ── */
-.mo{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;overflow-y:auto;}
+.mo{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:9999;overflow-y:auto;}
 .mo.op{display:block;}
-.mo-inner{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;box-sizing:border-box;}
-.mo-box{background:var(--sf);border-radius:var(--rxl);border:0.5px solid var(--b1);width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.mo-inner{display:flex;align-items:flex-start;justify-content:center;min-height:100%;padding:40px 16px;box-sizing:border-box;}
+.mo-box{background:#fff;border-radius:14px;width:100%;max-width:600px;box-shadow:0 24px 64px rgba(0,0,0,.22);position:relative;}
 .mo-hd{padding:16px 20px 13px;border-bottom:0.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between;}
 .mo-ttl{font-size:13px;font-weight:600;}
 .mo-bd{padding:20px;}
@@ -942,11 +942,12 @@ tbody tr:hover td{background:#faf9f7;}
   </div>
 </div></div></div>
 
-<!-- 입고 등록 (공통 구버전, 하위호환용) -->
-  <div class="mo-hd"><div class="mo-ttl">입고 등록</div><button class="btn sm" onclick="cm('mo-intake')">✕</button></div>
+<!-- ══ 도매 입고 등록 모달 ══ -->
+<div class="mo" id="mo-intake"><div class="mo-inner"><div class="mo-box">
+  <div class="mo-hd"><div class="mo-ttl">도매 입고 등록</div><button class="btn sm" onclick="cm('mo-intake')">✕</button></div>
   <div class="mo-bd"><div class="fgrid">
     <div class="fg"><label class="fl">입고 유형</label><select class="fsl"><option>소매 입고</option><option>도매 입고</option></select></div>
-    <div class="fg"><label class="fl">입고일</label><input class="fi" type="date" value="2026-04-14"></div>
+    <div class="fg"><label class="fl">입고일</label><input class="fi" type="date" value="2026-04-16"></div>
     <div class="fg"><label class="fl">Partner ID</label><select class="fsl"><option>V0006 (경인R&S)</option><option>V0004 (투데이)</option><option>V0003 (선봉솔루션)</option></select></div>
     <div class="fg"><label class="fl">카테고리</label><select class="fsl"><option>PT-HD (HDD)</option><option>LP-GE (LAPTOP)</option><option>DT-MT (DESKTOP)</option></select></div>
     <div class="fg"><label class="fl">브랜드</label><select class="fsl"><option>HITACHI (HTC)</option><option>APPLE (APL)</option><option>SAMSUNG (SS)</option></select></div>
@@ -954,12 +955,9 @@ tbody tr:hover td{background:#faf9f7;}
     <div class="fg full"><label class="fl">모델 (바코드스캔)</label><input class="fi" placeholder="스캔 또는 직접 입력"></div>
     <div class="fg"><label class="fl">품질등급</label><select class="fsl"><option>양품입고</option><option>불량반품</option><option>불량스크랩</option></select></div>
     <div class="fg"><label class="fl">위치 ID</label><input class="fi" placeholder="예: B-라-1"></div>
-  </div>
-  <div style="margin-top:10px;padding:8px 10px;background:var(--acl);border-radius:var(--rmd);font-size:11px;color:var(--acd);">
-    ✅ 입고 등록 시 재고 수량 자동 반영 · 수불대장 이력 자동 생성
   </div></div>
-  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-intake')">취소</button><button class="btn pr sm" onclick="cm('mo-intake');toast('입고 등록 완료 → 재고 반영됨')">입고 확정</button></div>
-</div></div>
+  <div class="mo-ft"><button class="btn sm" onclick="cm('mo-intake')">취소</button><button class="btn pr sm" onclick="cm('mo-intake');toast('입고 등록 완료')">입고 확정</button></div>
+</div></div></div>
 
 <!-- ══ 소매 거래 등록 모달 (통합스펙 자동생성 포함) ══ -->
 <div class="mo" id="mo-retail"><div class="mo-inner"><div class="mo-box">
@@ -1832,12 +1830,25 @@ function processUpload(pageId, rows) {
 }
 
 // ─── MODAL ───
-function om(id){document.getElementById(id).classList.add('op');}
-function cm(id){document.getElementById(id).classList.remove('op');}
-document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',function(e){
-  // 배경(.mo) 또는 .mo-inner 클릭시 닫기
-  if(e.target===this||e.target.classList.contains('mo-inner')) this.classList.remove('op');
-}));
+function om(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.add('op');
+  document.body.style.overflow='hidden';
+}
+function cm(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('op');
+  document.body.style.overflow='';
+}
+// 배경 클릭시 닫기
+document.addEventListener('click', function(e){
+  if(e.target.classList.contains('mo') || e.target.classList.contains('mo-inner')){
+    e.target.closest('.mo').classList.remove('op');
+    document.body.style.overflow='';
+  }
+});
 
 // ─── FILTER ───
 function ft(inp,tid){
