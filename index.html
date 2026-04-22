@@ -629,7 +629,7 @@ tbody tr:hover td{background:#faf9f7;}
       <div class="tbl-scroll"><table id="tb-returns">
         <thead><tr>
           <th>처리일</th><th>유형</th><th>고객명</th><th>상품명</th>
-          <th class="r">수량</th><th>사유</th><th>주문ID</th><th>재고반영</th><th>처리상태</th><th>작업</th>
+          <th class="r">수량</th><th>사유</th><th>송장번호</th><th>재고반영</th><th>처리상태</th><th>작업</th>
         </tr></thead>
         <tbody id="returns-body">
           <tr><td colspan="10" style="text-align:center;padding:28px;color:var(--t3);font-size:11px;">등록된 반품/교환 내역이 없습니다</td></tr>
@@ -1213,6 +1213,10 @@ tbody tr:hover td{background:#faf9f7;}
         <label class="fl">비고 (선택)</label>
         <input class="fi" type="text" id="rtn-note" placeholder="추가 메모">
       </div>
+      <div class="fg full">
+        <label class="fl">송장번호 (선택)</label>
+        <input class="fi" type="text" id="rtn-invoice" placeholder="반품 송장번호 입력">
+      </div>
     </div>
     <div id="rtn-exchange-note" style="display:none;margin-top:8px;padding:8px 12px;background:var(--wal);border-radius:var(--rmd);font-size:11px;color:var(--wa);">
       ⚠️ 교환 처리: 기존 출고 재고 복구 + 신규 출고 → 수불이력 2건 자동 기록
@@ -1584,7 +1588,7 @@ function renderReturns() {
         <td style="font-size:11px">${escHtml(r.model||'—')}</td>
         <td class="r">${r.qty}</td>
         <td style="font-size:11px;color:var(--t2)">${escHtml(r.reason||'—')}</td>
-        <td><span class="cd" style="font-size:10px">${r.orderId||'—'}</span></td>
+        <td><span class="cd" style="font-size:10px">${r.invoice||r.orderId||'—'}</span></td>
         <td><span class="bd ${r.stockDone?'g':'w'}">${r.stockDone?'반영완료':'처리중'}</span></td>
         <td><span class="bd g">완료</span></td>
         <td style="white-space:nowrap">
@@ -1709,6 +1713,7 @@ function submitReturn() {
   const date = document.getElementById('rtn-date').value;
   const reason = document.getElementById('rtn-reason').value;
   const note = document.getElementById('rtn-note').value;
+  const invoice = document.getElementById('rtn-invoice')?.value||'—';
 
   if(qty <= 0) { toast('⚠️ 수량을 입력해주세요'); return; }
   if(qty > r.qty) { toast(`❌ 처리 수량(${qty})이 주문 수량(${r.qty})을 초과합니다`); return; }
@@ -1716,7 +1721,8 @@ function submitReturn() {
   const refundAmt = Math.round((r.price||0) * qty);
   const newRecord = {
     date, type, cust: r.cust, model: r.model||r.barcode||'—',
-    qty, reason, note, orderId: String(idx),
+    qty, reason, note, invoice,
+    orderId: String(idx),
     refundAmt, stockDone: true,
     ch: r.ch, ispec: r.ispec||'—'
   };
@@ -2630,10 +2636,10 @@ function xlsxDownload(type) {
       filename: `반품교환_${dateStr}.xlsx`,
       sheets: [{
         name: '반품교환이력',
-        headers: ['처리일','유형','고객명','상품명','수량','사유','주문ID','환불금액','재고반영','비고'],
+        headers: ['처리일','유형','고객명','상품명','수량','사유','송장번호','환불금액','재고반영','비고'],
         rows: (DB.returns||[]).map(r=>[
           r.date, r.type, r.cust, r.model, r.qty, r.reason,
-          r.orderId, r.refundAmt||0, r.stockDone?'완료':'처리중', r.note||''
+          r.invoice||r.orderId||'—', r.refundAmt||0, r.stockDone?'완료':'처리중', r.note||''
         ])
       }]
     },
